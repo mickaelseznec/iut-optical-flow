@@ -11,12 +11,27 @@ import of.operators as op
 
 class TestDeriveesImage(unittest.TestCase):
     def setUp(self):
-        self.image_1 = np.arange(9).reshape(3, 3)
-
+        self.image_1 = np.array([5,3,1,6,8,0,1,2,3]).reshape(3, 3)
+        self.image_2 = np.array([4,5,7,1,0,6,3,3,2]).reshape(3,3)
 
     def test_derivee_x(self):
         # A faire ecrire le corps de la fonction dans operators.py et le test
-        pass
+        derivee_x_reference = np.array([[-2,-2,0],[2,-8,0],[1,1,0]])
+        derivee_x = op.derivee_x(self.image_1)
+        self.assertTrue(np.all(derivee_x == derivee_x_reference))
+
+    def test_derivee_y(self):
+
+        # A faire ecrire le corps de la fonction dans operators.py et le test
+        derivee_y_reference = np.array([[-3,-5,-1],[2,3,-4],[0,0,0]])
+        derivee_y = op.derivee_y(self.image_2)
+        self.assertTrue(np.all(derivee_y == derivee_y_reference))
+   
+    def test_derivee_t(self):
+        # A faire ecrire le corps de la fonction dans operators.py et le test
+        derivee_t_reference = np.array([[-1,2,6],[-5,-8,6],[2,1,-1]])
+        derivee_t = op.derivee_t(self.image_1,self.image_2)
+        self.assertTrue(np.all(derivee_t== derivee_t_reference))   
 
 if __name__ == "__main__":
     unittest.main()
