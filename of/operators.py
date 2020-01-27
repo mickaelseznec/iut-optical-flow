@@ -24,71 +24,67 @@ def derivee_t(image_1, image_2):
     tab_dt = np.zeros((hauteur,largeur))
     tab_dt  =  image_2 - image_1
     return tab_dt
+ 
 def somme_fenetre(image,x,y,r):
     hauteur,largeur = image.shape
     tab_fenetre = np.zeros((2*r+1,2*r+1))
-    som_tab = 0
-   
-    if((x+r <hauteur) & (x-r >= 0) & (y+r<largeur ) & (y-r>=0)):
+    somme_tab = 0
+    if((x+r < hauteur) &  (x-r >= 0) & (y+r < largeur ) & (y-r >= 0)):
+        # pas de dépassement
         tab_fenetre = image[x-r:x+r+1,y-r:y+r+1]
-        som_tab = np.sum(tab_fenetre)
-    
-    
-    
+        somme_tab = np.sum(tab_fenetre)
     elif(x-r<0):
         if(y+r>largeur-1):
+            # dépassement en coin haut droite
             tab_int = image[0:x+r+1,y-r:largeur]
-            tab_bord1 = image[0,y-r:largeur]
-            tab_bord2 = image[0:x+r+1,largeur-1]
-            som= np.sum(tab_int) + np.sum(tab_bord1) * (r-x) + np.sum(tab_bord2) * (y+r-largeur+1) + image[0,largeur-1] * (r-x) * (y+r-largeur+1)
-            print(tab_int)
-            print(tab_bord1)
-            print(tab_bord2)
+            tab_bord_haut = image[0,y-r:largeur]
+            tab_bord_droite = image[0:x+r+1,largeur-1:largeur]
+            coin = image[0][largeur-1]
+            somme_tab = np.sum(tab_int) + np.sum(tab_bord_haut)*(r-x) + np.sum(tab_bord_droite)*(r-(largeur-1-y)) + coin*((r-x)*(r-(largeur-1-y)))
         elif (y-r<0):
+            # dépassement en coin haut gauche
             tab_int = image[0:x+r+1,0:y+r+1]
-            tab_bord1 = image[0,0:y+r+1]
-            tab_bord2 = image[0:x+r+1,0]
-            som= np.sum(tab_int) + np.sum(tab_bord1) * (r-x) + np.sum(tab_bord2) * (r-y) + image[0,0] * (r-x) * (r-y) 
+            tab_bord_haut = image[0,0:y+r+1]
+            tab_bord_gauche = image[0:x+r+1,0:1]
+            coin = image[0][0]
+            somme_tab = np.sum(tab_int) + np.sum(tab_bord_haut)*(r-x) + np.sum(tab_bord_gauche)*(r-y) + coin*((r-x)*(r-y))
         else:
+            # dépassement en haut seulement
             tab_int = image[0:x+r+1,y-r:y+r+1]
             tab_bord= image[0,y-r:y+r+1]
-            som = np.sum(tab_int) + np.sum(tab_bord) * (r-x)
+            somme_tab = np.sum(tab_int) + np.sum(tab_bord) * (r-x)
 
-    
-    
-    
     elif(x+r>(hauteur-1)):
         if(y+r>largeur-1):
-            if(y+r>largeur-1):
-                tab_int = image[x-r:hauteur,y-r:largeur]
-                tab_bord1 = image[hauteur-1,y-r:largeur]
-                tab_bord2 = image[x-r:hauteur,largeur-1]
-                som= np.sum(tab_int) + np.sum(tab_bord1) * (x+r-hauteur+1) + np.sum(tab_bord2) * (y+r-largeur+1) + image[hauteur-1,largeur-1] * (x+r-hauteur+1) * (y+r-largeur+1)
-                print(tab_int)
-                print(tab_bord1)
-                print(tab_bord2)
+            # dépassement en coin bas droite
+            tab_int = image[x-r:hauteur,y-r:largeur]
+            tab_bord_bas = image[hauteur-1:hauteur,y-r:largeur]
+            tab_bord_droite = image[x-r:hauteur,largeur-1:largeur]
+            coin = image[hauteur-1][largeur-1]
+            somme_tab = np.sum(tab_int) + np.sum(tab_bord_bas)*(r-(hauteur-1-x)) + np.sum(tab_bord_droite)*(r-(largeur-1-y)) + coin*((r-(hauteur-1-x))*(r-(largeur-1-y)))
         elif (y-r<0):
+            # dépassement en coin bas gauche
             tab_int = image[x-r:hauteur,0:y+r+1]
-            tab_bord1 = image[hauteur-1,0:y+r+1]
-            tab_bord2 = image[x-r:hauteur,0]
-            som= np.sum(tab_int) + np.sum(tab_bord1) * (x+r-hauteur+1) + np.sum(tab_bord2) * (r-y) + image[hauteur-1,0] * (x+r-hauteur+1) * (r-y)
-            print(tab_int)
-            print(tab_bord1)
-            print(tab_bord2)
+            tab_bord_bas = image[(hauteur-1):hauteur,0:y+r+1]
+            tab_bord_gauche = image[x-r:hauteur,0:1]
+            coin = image[hauteur-1][0]
+            somme_tab = np.sum(tab_int) + np.sum(tab_bord_bas)*(r-(hauteur-1-x)) + np.sum(tab_bord_gauche)*(r-y) + coin*((r-(hauteur-1-x))*(r-y))
+            pass
         else:
-            tab_int = image[x-r:hauteur,y-r:y+r+1]
+            # dépassement en bas seulement
+            tab_int = image[x-r:(hauteur),y-r:y+r+1]
             tab_bord= image[(hauteur-1),y-r:y+r+1]
-            som = np.sum(tab_int) + np.sum(tab_bord) * (r-(hauteur-1-x)) 
+            somme_tab = np.sum(tab_int) + np.sum(tab_bord) * (r-(hauteur-1-x))
+
+    elif(y-r<0):
+        # dépassement à gauche seulement
+        tab_int = image[x-r:x+r+1,0:y+r+1]
+        tab_bord= image[x-r:x+r+1,0:1]
+        somme_tab = np.sum(tab_int) + np.sum(tab_bord) * (r-y)
     
-    
-    
-    else:
-        if(y+r>largeur-1):
-            tab_int = image[x-r:x+r+1,y-r:largeur]
-            tab_bord= image[x-r:x+r+1,largeur-1]          
-            som = np.sum(tab_int) + np.sum(tab_bord) * (y+r-largeur+1)
-        elif (y-r<0):
-            tab_int = image[x-r:x+r+1,0:y+r+1]
-            tab_bord= image[x-r:x+r+1,0]          
-            som = np.sum(tab_int) + np.sum(tab_bord) * (r-y)
-    return som
+    elif(y+r>largeur-1):
+        # dépassement à droite seulement
+        tab_int = image[x-r:x+r+1,y-r:largeur]
+        tab_bord= image[x-r:x+r+1,(largeur-1):largeur]
+        somme_tab = np.sum(tab_int) + np.sum(tab_bord) * (r-(largeur-1-y))
+    return somme_tab
