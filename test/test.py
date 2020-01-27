@@ -34,7 +34,7 @@ class TestDeriveesImage(unittest.TestCase):
         self.assertTrue(np.all(derivee_t== derivee_t_reference))   
 
     def test_somme_fenetre(self):
-        somme = op.somme_fenetre(self.image_3,1,0,2)
+        somme = op.somme_fenetre(self.image_3,4,0,1)
         print(somme)
         
 
