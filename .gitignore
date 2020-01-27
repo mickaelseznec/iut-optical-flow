@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+of/operators.py
+.gitignore
+.vscode
