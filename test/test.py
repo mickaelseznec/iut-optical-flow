@@ -13,7 +13,7 @@ class TestDeriveesImage(unittest.TestCase):
     def setUp(self):
         self.image_1 = np.array([5,3,1,6,8,0,1,2,3]).reshape(3, 3)
         self.image_2 = np.array([4,5,7,1,0,6,3,3,2]).reshape(3,3)
-        self.image_3 = np.array([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,1,1,1,1,2,2,2,2,2]).reshape(5,5)
+        self.image_3 = np.array([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,1,1,1,1,2,6,3,8,4]).reshape(5,5)
 
     def test_derivee_x(self):
         # A faire ecrire le corps de la fonction dans operators.py et le test
@@ -35,9 +35,9 @@ class TestDeriveesImage(unittest.TestCase):
         self.assertTrue(np.all(derivee_t== derivee_t_reference))   
 
     def test_somme_fenetre(self):
-        somme = op.somme_fenetre(self.image_3,1,0,2)
+        somme = op.somme_fenetre(self.image_3,0,0,1)
         print(somme)
-        
+
 
 if __name__ == "__main__":
     unittest.main()
