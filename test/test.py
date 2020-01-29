@@ -36,6 +36,7 @@ class TestDeriveesImage(unittest.TestCase):
 
     def test_somme_fenetre(self):
         somme = op.somme_fenetre(self.image_3,4,0,1)
+        print(somme)
         
 
     def test_inverser_la_matrice(self):
