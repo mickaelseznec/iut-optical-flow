@@ -29,17 +29,15 @@ def somme_fenetre(image,x,y,r):
     hauteur,largeur = image.shape
     # Création de la nouvelle image
     nouvelle_image = np.zeros((2*r+hauteur,2*r+largeur))
-    nouvelle_image[r:hauteur+r,r:largeur+r] = image                             #Milieu du tableau
-    nouvelle_image[0:r,r:largeur+r] = image[0,:]                                #Haut du tableau
-    nouvelle_image[r+largeur:,r:largeur+r] = image[hauteur-1:hauteur,:]         #Bas du tableau
-    nouvelle_image[0:r,0:r] = image[0][0]                                       #coin haut gauche du tableau
-    nouvelle_image[0:r,largeur+r:] = image[0][largeur-1]                        #coin haut droite du tableau
-    nouvelle_image[hauteur+r:,largeur+r:] = image[hauteur-1][largeur-1]         #coin bas droite du tableau
-    nouvelle_image[hauteur+r:,0:r] = image[hauteur-1][0]                        #coin bas gauche du tableau
-    for i in range(r):                                                          #gauche du tableau
-        nouvelle_image[r:hauteur+r,i:i+1] = image[:hauteur,0:1]
-    for i in range(hauteur+r,hauteur+(2*r)):                                    #droite du tableau
-        nouvelle_image[r:hauteur+r,i:i+1] = image[:hauteur,largeur-1:largeur]
+    nouvelle_image[r:hauteur+r,r:largeur+r] = image                                                                                 #Milieu du tableau
+    nouvelle_image[0:r,r:largeur+r] = image[0,:]                                                                                    #Haut du tableau
+    nouvelle_image[r+largeur:,r:largeur+r] = image[hauteur-1:hauteur,:]                                                             #Bas du tableau
+    nouvelle_image[0:r,0:r] = image[0][0]                                                                                           #coin haut gauche du tableau
+    nouvelle_image[0:r,largeur+r:] = image[0][largeur-1]                                                                            #coin haut droite du tableau
+    nouvelle_image[hauteur+r:,largeur+r:] = image[hauteur-1][largeur-1]                                                             #coin bas droite du tableau
+    nouvelle_image[hauteur+r:,0:r] = image[hauteur-1][0]                                                                            #coin bas gauche du tableau
+    nouvelle_image[r:hauteur+r,0:r] = np.repeat(image[:hauteur,0:1],r).reshape(hauteur,r)                                           #gauche du tableau
+    nouvelle_image[r:hauteur+r,largeur+r:largeur+2*r] = np.repeat(image[0:hauteur,largeur-1:largeur],r).reshape(hauteur,r)          #droite du tableau
     # Création de la fenêtre
     tab_fenetre = np.zeros((2*r+1,2*r+1))
     tab_fenetre = nouvelle_image[x:x+(2*r)+1,y:y+(2*r)+1]
