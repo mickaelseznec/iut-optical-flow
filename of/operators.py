@@ -44,3 +44,13 @@ def somme_fenetre(image,x,y,r):
     # Calcul de la somme du tableau
     somme_tab = np.sum(tab_fenetre)
     return somme_tab
+
+def inverser_la_matrice(matrice):
+    tab_inv = np.zeros((2,2))
+    determinant =  matrice[0,0] * matrice[1,1] - matrice[0,1] * matrice[1,0]
+    print(determinant)
+    tab_inv[0,0] = matrice[1,1]/determinant
+    tab_inv[0,1] = -matrice[0,1]/determinant
+    tab_inv[1,0] = -matrice[1,0]/determinant
+    tab_inv[1,1] = matrice[0,0]/determinant
+    return tab_inv
