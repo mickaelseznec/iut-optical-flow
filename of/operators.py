@@ -39,9 +39,7 @@ def somme_fenetre(image,x,y,r):
             tab_bord1 = image[0,y-r:largeur]
             tab_bord2 = image[0:x+r+1,largeur-1]
             som= np.sum(tab_int) + np.sum(tab_bord1) * (r-x) + np.sum(tab_bord2) * (y+r-largeur+1) + image[0,largeur-1] * (r-x) * (y+r-largeur+1)
-            print(tab_int)
-            print(tab_bord1)
-            print(tab_bord2)
+            
         elif (y-r<0):
             tab_int = image[0:x+r+1,0:y+r+1]
             tab_bord1 = image[0,0:y+r+1]
@@ -62,17 +60,13 @@ def somme_fenetre(image,x,y,r):
                 tab_bord1 = image[hauteur-1,y-r:largeur]
                 tab_bord2 = image[x-r:hauteur,largeur-1]
                 som= np.sum(tab_int) + np.sum(tab_bord1) * (x+r-hauteur+1) + np.sum(tab_bord2) * (y+r-largeur+1) + image[hauteur-1,largeur-1] * (x+r-hauteur+1) * (y+r-largeur+1)
-                print(tab_int)
-                print(tab_bord1)
-                print(tab_bord2)
+            
         elif (y-r<0):
             tab_int = image[x-r:hauteur,0:y+r+1]
             tab_bord1 = image[hauteur-1,0:y+r+1]
             tab_bord2 = image[x-r:hauteur,0]
             som= np.sum(tab_int) + np.sum(tab_bord1) * (x+r-hauteur+1) + np.sum(tab_bord2) * (r-y) + image[hauteur-1,0] * (x+r-hauteur+1) * (r-y)
-            print(tab_int)
-            print(tab_bord1)
-            print(tab_bord2)
+            
         else:
             tab_int = image[x-r:hauteur,y-r:y+r+1]
             tab_bord= image[(hauteur-1),y-r:y+r+1]
@@ -90,3 +84,14 @@ def somme_fenetre(image,x,y,r):
             tab_bord= image[x-r:x+r+1,0]          
             som = np.sum(tab_int) + np.sum(tab_bord) * (r-y)
     return som
+
+def inverser_la_matrice(matrice):
+    tab_inv = np.zeros((2,2))
+    determinant =  matrice[0,0] * matrice[1,1] - matrice[0,1] * matrice[1,0]
+    print(determinant)
+    tab_inv[0,0] = matrice[1,1]/determinant
+    tab_inv[0,1] = -matrice[0,1]/determinant
+    tab_inv[1,0] = -matrice[1,0]/determinant
+    tab_inv[1,1] = matrice[0,0]/determinant
+    return tab_inv
+
