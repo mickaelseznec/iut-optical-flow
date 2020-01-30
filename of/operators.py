@@ -31,7 +31,7 @@ def somme_fenetre(image,x,y,r):
     nouvelle_image = np.zeros((2*r+hauteur,2*r+largeur))
     nouvelle_image[r:hauteur+r,r:largeur+r] = image                                                                                 #Milieu du tableau
     nouvelle_image[0:r,r:largeur+r] = image[0,:]                                                                                    #Haut du tableau
-    nouvelle_image[r+largeur:,r:largeur+r] = image[hauteur-1:hauteur,:]                                                             #Bas du tableau
+    nouvelle_image[r+hauteur:,r:largeur+r] = image[hauteur-1:hauteur,:]                                                             #Bas du tableau
     nouvelle_image[0:r,0:r] = image[0][0]                                                                                           #coin haut gauche du tableau
     nouvelle_image[0:r,largeur+r:] = image[0][largeur-1]                                                                            #coin haut droite du tableau
     nouvelle_image[hauteur+r:,largeur+r:] = image[hauteur-1][largeur-1]                                                             #coin bas droite du tableau
@@ -44,3 +44,13 @@ def somme_fenetre(image,x,y,r):
     # Calcul de la somme du tableau
     somme_tab = np.sum(tab_fenetre)
     return somme_tab
+
+def inverser_matrice(matrice):
+    tab_inv = np.zeros((2,2))
+    determinant =  matrice[0,0] * matrice[1,1] - matrice[0,1] * matrice[1,0]
+    print(determinant)
+    tab_inv[0,0] = matrice[1,1]/determinant
+    tab_inv[0,1] = -matrice[0,1]/determinant
+    tab_inv[1,0] = -matrice[1,0]/determinant
+    tab_inv[1,1] = matrice[0,0]/determinant
+    return tab_inv
