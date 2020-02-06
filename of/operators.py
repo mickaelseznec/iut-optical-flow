@@ -54,3 +54,25 @@ def inverser_matrice(matrice):
     tab_inv[1,0] = -matrice[1,0]
     tab_inv[1,1] = matrice[0,0]
     return tab_inv/determinant
+
+def flux_optique(image):
+    # print(derivee_x(image))
+    hauteur, largeur = image.shape
+    somme_tab_dx_2 = np.zeros((hauteur,largeur))
+    somme_tab_dy_2 = np.zeros((hauteur,largeur))
+    somme_tab_dx_dy = np.zeros((hauteur,largeur))
+    tab_dx_2 = derivee_x(image)*derivee_x(image)
+    tab_dy_2 = derivee_y(image)*derivee_y(image)
+    tab_dx_dy = derivee_y(image)*derivee_x(image)
+    for i in range(hauteur):
+        for j in range(largeur):
+            somme_tab_dx_2[i][j] = somme_fenetre(tab_dx_2,i,j,1)
+            somme_tab_dy_2[i][j] = somme_fenetre(tab_dy_2,i,j,1)
+            somme_tab_dx_dy[i][j] = somme_fenetre(tab_dx_dy,i,j,1)
+    AtA = np.zeros((2,2))
+    AtA[0][0] = somme_tab_dx_2
+    AtA[0][1] = somme_tab_dx_dy
+    AtA[1][0] = somme_tab_dx_dy
+    AtA[1][1] = somme_tab_dy_2
+    
+    print(AtA)
