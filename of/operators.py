@@ -74,7 +74,7 @@ def flux_optique(image1,image2):
     AtA = np.array([[somme_tab_dx_2,somme_tab_dx_dy],[somme_tab_dx_dy,somme_tab_dy_2]])
     inv_AtA = inverser_matrice(AtA)
     Atb = np.array([somme_dt_dx,somme_dt_dy])
-    dx = AtA[0][0]*Atb[0] + AtA[0][1]*Atb[1]
-    dy = AtA[1][0]*Atb[0] + AtA[1][1]*Atb[1]
+    dx = inv_AtA[0][0]*Atb[0] + inv_AtA[0][1]*Atb[1]
+    dy = inv_AtA[1][0]*Atb[0] + inv_AtA[1][1]*Atb[1]
     x=np.array([dx,dy])
-    print(x)
+    return dx,dy

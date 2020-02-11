@@ -2,12 +2,15 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import operators as op
+import flowpy
 
-image = np.asarray(Image.open("data/RubberWhale/frame10.png"))
-image_dx = op.derivee_x(image)
-image_dy = op.derivee_y(image)
-plt.subplot(1,2,1)
-plt.imshow(image_dx)
-plt.subplot(1,2,2)
-plt.imshow(image_dy)
-plt.show()
+image_1 = np.asarray(Image.open("data/RubberWhale/frame10.png"))
+image_2 = np.asarray(Image.open("data/RubberWhale/frame11.png"))
+image_dx,image_dy = op.flux_optique(image_1,image_2)
+flowpy.show_flow(image_1,image_2)
+# image_dy = op.derivee_y(image)
+# plt.subplot(1,2,1)
+# plt.imshow(image_dx)
+# plt.subplot(1,2,2)
+# plt.imshow(image_dy)
+# plt.show()
