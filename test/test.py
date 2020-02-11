@@ -40,7 +40,7 @@ class TestDeriveesImage(unittest.TestCase):
     
     def test_flot_optique(self):
         # print(self.image_1)
-        oui,non = op.flux_optique(self.image_1, self.image_2)
+        non = op.flux_optique(self.image_1, self.image_2)[0]
         print(non)
         # pass
 
