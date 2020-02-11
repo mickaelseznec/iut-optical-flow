@@ -76,4 +76,5 @@ def flux_optique(image1,image2):
     Atb = np.array([somme_dt_dx,somme_dt_dy])
     dx = AtA[0][0]*Atb[0] + AtA[0][1]*Atb[1]
     dy = AtA[1][0]*Atb[0] + AtA[1][1]*Atb[1]
-    print(dy)
+    x=np.array([dx,dy])
+    print(x)
