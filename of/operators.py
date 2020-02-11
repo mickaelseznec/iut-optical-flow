@@ -2,26 +2,22 @@ import numpy as np
 
 
 def derivee_x(image):
-
     # Retourne la derivée en x pour tous les pixels de l'image
-    hauteur, largeur = image.shape
-    tab_dx = np.zeros((hauteur,largeur))
+    tab_dx = np.zeros_like(image)
     tab_dx[:,-1] = 0
     tab_dx[:,0:-1] =  image[:,1:] - image[:,0:-1]    
     return tab_dx
 
 def derivee_y(image):
     # Retourne la derivée en y pour tous les pixels de l'image
-    hauteur, largeur = image.shape
-    tab_dy = np.zeros((hauteur,largeur))
+    tab_dy = np.zeros_like(image)
     tab_dy[-1,:] = 0
     tab_dy[0:-1,:] =  image[1:,:] - image[0:-1,:]   
     return tab_dy
 
 def derivee_t(image_1, image_2):
     # Retourne la derivée en t pour tous les pixels de l'image
-    hauteur,largeur = image_1.shape
-    tab_dt = np.zeros((hauteur,largeur))
+    tab_dt = np.zeros_like(image_1)
     tab_dt  =  image_2 - image_1
     return tab_dt
  
@@ -46,32 +42,38 @@ def somme_fenetre(image,x,y,r):
     return somme_tab
 
 def inverser_matrice(matrice):
-    tab_inv = np.zeros((2,2))
+    tab_inv = matrice
     determinant =  matrice[0,0] * matrice[1,1] - matrice[0,1] * matrice[1,0]
-    print(determinant)
+    # print(determinant)
     tab_inv[0,0] = matrice[1,1]
-    tab_inv[0,1] = -matrice[0,1]
-    tab_inv[1,0] = -matrice[1,0]
+    tab_inv[0,1] = -1*matrice[0,1]
+    tab_inv[1,0] = -1*matrice[1,0]
     tab_inv[1,1] = matrice[0,0]
     return tab_inv/determinant
 
 def flux_optique(image1,image2):
-    # print(derivee_x(image))
     hauteur, largeur = image1.shape
-    somme_tab_dx_2 = np.zeros((hauteur,largeur))
-    somme_tab_dy_2 = np.zeros((hauteur,largeur))
-    somme_tab_dx_dy = np.zeros((hauteur,largeur))
-    somme_b = np.zeros((hauteur,largeur))
+    somme_tab_dx_2 = np.zeros_like(image1)
+    somme_tab_dy_2 = np.zeros_like(image1)
+    somme_tab_dx_dy = np.zeros_like(image1)
+    somme_dt_dx = np.zeros_like(image1)
+    somme_dt_dy = np.zeros_like(image1)
     tab_dx_2 = derivee_x(image1)*derivee_x(image1)
     tab_dy_2 = derivee_y(image1)*derivee_y(image1)
     tab_dx_dy = derivee_y(image1)*derivee_x(image1)
     b = -derivee_t(image1,image2)
+    tab_dt_dx = b*derivee_x(image1)
+    tab_dt_dy = b*derivee_y(image1)
     for i in range(hauteur):
         for j in range(largeur):
             somme_tab_dx_2[i][j] = somme_fenetre(tab_dx_2,i,j,1)
             somme_tab_dy_2[i][j] = somme_fenetre(tab_dy_2,i,j,1)
             somme_tab_dx_dy[i][j] = somme_fenetre(tab_dx_dy,i,j,1)
-            somme_b[i][j] = somme_fenetre(b,i,j,1)
+            somme_dt_dx[i][j] = somme_fenetre(tab_dt_dx,i,j,1)
+            somme_dt_dy[i][j] = somme_fenetre(tab_dt_dy,i,j,1)
     AtA = np.array([[somme_tab_dx_2,somme_tab_dx_dy],[somme_tab_dx_dy,somme_tab_dy_2]])
-    
-    print(AtA)
+    inv_AtA = inverser_matrice(AtA)
+    Atb = np.array([somme_dt_dx,somme_dt_dy])
+    dx = AtA[0][0]*Atb[0] + AtA[0][1]*Atb[1]
+    dy = AtA[1][0]*Atb[0] + AtA[1][1]*Atb[1]
+    print(dy)

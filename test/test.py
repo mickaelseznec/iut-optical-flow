@@ -36,11 +36,12 @@ class TestDeriveesImage(unittest.TestCase):
 
     def test_somme_fenetre(self):
         somme = op.somme_fenetre(self.image_3,0,0,3)
-        print(somme)
+        # print(somme)
     
     def test_flot_optique(self):
         # print(self.image_1)
-        op.flux_optique(self.image_1)
+        op.flux_optique(self.image_1, self.image_2)
+        # pass
 
 
 if __name__ == "__main__":
