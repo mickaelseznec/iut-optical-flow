@@ -36,19 +36,16 @@ class TestDeriveesImage(unittest.TestCase):
 
     def test_somme_fenetre(self):
         somme = op.somme_fenetre(self.image_3,4,0,1)
-        print(somme)
+        #print(somme)
         
 
     def test_inverser_la_matrice(self):
-
         tab_inv = op.inverser_la_matrice(self.matrice)
-        print(tab_inv)
-    
-        
+        #print(tab_inv)
 
-
-        
-
+    def flux_optique(self):
+        op.flux_optique(self.image_1)
+        #print(somme)
 if __name__ == "__main__":
     unittest.main()
 
