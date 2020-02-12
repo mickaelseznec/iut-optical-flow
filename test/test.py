@@ -35,13 +35,17 @@ class TestDeriveesImage(unittest.TestCase):
         self.assertTrue(np.all(derivee_t== derivee_t_reference))   
 
     def test_somme_fenetre(self):
-        somme = op.somme_fenetre(self.image_3,0,0,3)
+        somme = op.somme_fenetre(self.image_1,0,0,3)
         # print(somme)
     
+    def test_somme_fenetre_global(self):
+        somme_tab = op.somme_fenetre_global(self.image_1,1)
+        print(somme_tab)    
+
     def test_flot_optique(self):
         # print(self.image_1)
-        non = op.flux_optique(self.image_1, self.image_2)[0]
-        print(non)
+        non = op.flux_optique(self.image_1, self.image_2, 1)[0]
+        # print(non)
         # pass
 
 
