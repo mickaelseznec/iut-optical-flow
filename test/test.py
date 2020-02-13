@@ -13,8 +13,8 @@ class TestDeriveesImage(unittest.TestCase):
     def setUp(self):
         self.image_1 = np.array([5,3,1,6,8,0,1,2,3]).reshape(3, 3)
         self.image_2 = np.array([4,5,7,1,0,6,3,3,2]).reshape(3,3)
-        self.image_3 = np.array([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,1,1,1,1,2,2,2,2,2]).reshape(5,5)
-        self.matrice = np.array([1,2,3,2]).reshape(2,2)
+        self.image_3 = np.array([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,1,1,1,1,2,6,3,8,4]).reshape(5,5)
+
     def test_derivee_x(self):
         # A faire ecrire le corps de la fonction dans operators.py et le test
         derivee_x_reference = np.array([[-2,-2,0],[2,-8,0],[1,1,0]])
@@ -35,17 +35,15 @@ class TestDeriveesImage(unittest.TestCase):
         self.assertTrue(np.all(derivee_t== derivee_t_reference))   
 
     def test_somme_fenetre(self):
-        somme = op.somme_fenetre(self.image_3,4,0,1)
+        somme = op.somme_fenetre(self.image_3,2,2,1)
         #print(somme)
-        
+    def test_somme_fenetre_global(self):
+        somme_tab = op.somme_fenetre_global(self.image_3,1)
+        #print(somme_tab)
+    def test_flot_optique(self):
+        dx,dy =  op.flot_optique(self.image_1,self.image_2,1)
+    
 
-    def test_inverser_la_matrice(self):
-        tab_inv = op.inverser_la_matrice(self.matrice)
-        #print(tab_inv)
-
-    def flux_optique(self):
-        op.flux_optique(self.image_1)
-        #print(somme)
 if __name__ == "__main__":
     unittest.main()
 
