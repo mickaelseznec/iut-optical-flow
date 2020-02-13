@@ -4,7 +4,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 
 import numpy as np
+import numba as nb
 import matplotlib.pyplot as plt
+import scipy.signal
 
 import unittest
 import of.operators as op
@@ -39,7 +41,7 @@ class TestDeriveesImage(unittest.TestCase):
         # print(somme)
     
     def test_somme_fenetre_global(self):
-        somme_tab = op.somme_fenetre_global(self.image_1,1)
+        somme_tab = op.somme_fenetre_global(self.image_1,17)
         print(somme_tab)    
 
     def test_flot_optique(self):

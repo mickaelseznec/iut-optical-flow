@@ -1,8 +1,10 @@
 from PIL import Image
+import numba as nb
 import numpy as np
 import matplotlib.pyplot as plt
 import operators as op
 import flowpy
+import scipy.signal
 
 image_1 = np.asarray(Image.open("data/RubberWhale/frame10.png"))
 image_2 = np.asarray(Image.open("data/RubberWhale/frame11.png"))
