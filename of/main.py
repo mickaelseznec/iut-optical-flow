@@ -10,7 +10,7 @@ image_1 = np.asarray(Image.open("data/RubberWhale/frame10.png"))
 image_2 = np.asarray(Image.open("data/RubberWhale/frame11.png"))
 # print(image_1)
 
-image_dx, image_dy = op.flux_optique(image_1,image_2, 17)
+image_dx, image_dy = op.flux_optique(image_1,image_2, 19)
 flowpy.show_flow(image_dx,image_dy)
 # image_dy = op.derivee_y(image_1)
 # plt.subplot(1,2,1)

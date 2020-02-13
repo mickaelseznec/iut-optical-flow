@@ -41,7 +41,7 @@ class TestDeriveesImage(unittest.TestCase):
         # print(somme)
     
     def test_somme_fenetre_global(self):
-        somme_tab = op.somme_fenetre_global(self.image_1,17)
+        somme_tab = op.somme_fenetre_global(self.image_1,2)
         print(somme_tab)    
 
     def test_flot_optique(self):

@@ -58,24 +58,9 @@ def somme_fenetre_global(image,r):
     # Création du tableau final
     somme_fenetre = np.zeros((hauteur,largeur))
     # Calcul de la somme du tableau
-
-
-
-    filtre = np.ones((hauteur+r+r-2,largeur+r+r-2))
+    filtre = np.ones((2*r+1,2*r+1))
     somme_image_intermediaire = scipy.signal.convolve2d(nouvelle_image,filtre)
-    # print(filtre)
     somme_fenetre = somme_image_intermediaire[r+r:-(r+r),r+r:-(r+r)]
-
-
-
-    # for i in range (hauteur):
-    #     for j in range(largeur):
-    #         somme_tab = np.sum(nouvelle_image[i:i+(2*r)+1,j:j+(2*r)+1])
-    #         somme_fenetre[i][j] = somme_tab
-
-
-
-
     return somme_fenetre
 
 def inverser_matrice(matrice):
