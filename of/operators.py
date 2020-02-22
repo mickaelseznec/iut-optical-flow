@@ -1,6 +1,11 @@
 import numpy as np
 import scipy.signal
+import cv2 as cv
+import matplotlib.pyplot as plt
 
+def rgb2gray(rgb):
+    # Transforme une image en couleur en une image en niveaux de gris
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
 
 def derivee_x(image):
     # Retourne la derivée en x pour tous les pixels de l'image
@@ -101,3 +106,25 @@ def flux_optique(image1, image2, rayon):
     dx = inv_AtA[0][0]*Atb[0] + inv_AtA[0][1]*Atb[1]
     dy = inv_AtA[1][0]*Atb[0] + inv_AtA[1][1]*Atb[1]
     return dx, dy
+
+def flux_optique_video(video, rayon):
+    cap = cv.VideoCapture(video)
+    ret, image_1 = cap.read()
+    image_1 = rgb2gray(np.array(image_1))
+    # hauteur, largeur, longueur = image_1.shape
+
+    while(cap.isOpened()):
+        ret, image_2 = cap.read()
+        image_2 = rgb2gray(np.array(image_2))
+        # plt.imshow(image_1)
+        # plt.show()
+        if cv.waitKey(500) & 0xFF == ord('q'):
+            break
+        x, y = flux_optique(image_1, image_2, rayon)
+        
+        norme = np.sqrt(x**2+y**2)
+        cv.imshow("sparse optical flow", norme)
+        image_1 = image_2
+    cap.release()
+    cv.destroyAllWindows()
+    # pass
