@@ -2,6 +2,7 @@ import numpy as np
 import scipy.signal
 import cv2 as cv
 import matplotlib.pyplot as plt
+import flowpy
 
 def rgb2gray(rgb):
     # Transforme une image en couleur en une image en niveaux de gris
@@ -24,7 +25,7 @@ def derivee_y(image):
 def derivee_t(image_1, image_2):
     # Retourne la derivée en t pour tous les pixels de l'image
     tab_dt = np.zeros_like(image_1)
-    tab_dt  =  image_2 - image_1
+    tab_dt  =  image_2.astype(float) - image_1.astype(float)
     return tab_dt
  
 def somme_fenetre(image,x,y,r):
@@ -110,20 +111,21 @@ def flux_optique(image1, image2, rayon):
 def flux_optique_video(video, rayon):
     cap = cv.VideoCapture(video)
     ret, image_1 = cap.read()
-    image_1 = rgb2gray(np.array(image_1))
+    image_1 = cv.cvtColor(np.array(image_1), cv.COLOR_BGR2GRAY)
     # hauteur, largeur, longueur = image_1.shape
 
     while(cap.isOpened()):
         ret, image_2 = cap.read()
-        image_2 = rgb2gray(np.array(image_2))
+        image_2 = cv.cvtColor(np.array(image_2), cv.COLOR_BGR2GRAY)
         # plt.imshow(image_1)
         # plt.show()
         if cv.waitKey(500) & 0xFF == ord('q'):
             break
         x, y = flux_optique(image_1, image_2, rayon)
         
-        norme = np.sqrt(x**2+y**2)
-        cv.imshow("sparse optical flow", norme)
+        flowpy.show_flow(x,y)
+        # norme = np.sqrt(x**2+y**2)
+        # cv.imshow("sparse optical flow", norme)
         image_1 = image_2
     cap.release()
     cv.destroyAllWindows()
