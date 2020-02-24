@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 import unittest
 import of.operators as op
+from numba import jit
 
 class TestDeriveesImage(unittest.TestCase):
     def setUp(self):

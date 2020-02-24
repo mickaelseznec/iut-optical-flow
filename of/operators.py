@@ -42,24 +42,24 @@ def derivee_t(image_1, image_2):
     return tab_dt
 
 
-# def somme_fenetre(image,x,y,r):  # x correspond à ligne, y correspond à colone
-#     hauteur,largeur = image.shape
-#     #création de fenêtre
-#     tab_fenetre = np.zeros((2*r+1,2*r+1))
-#     nouvelle_image = np.zeros((hauteur + 2*r, largeur + 2*r))
-#     nouvelle_image[r:hauteur+r,r:largeur+r] = image #milieu
-#     nouvelle_image[0:r,r:largeur+r] = image[0,:]    #haut
-#     nouvelle_image[hauteur+r:,r:r+largeur] = image[hauteur-1,:]  #bas
-#     nouvelle_image[0:r,0:r] = image[0,0] #coin gauche_haut
-#     nouvelle_image[r+hauteur:,0:r] = image[hauteur-1,0] # coin gauche_bas
-#     nouvelle_image[0:r,r+largeur:] = image[0,largeur-1]  #coin droit_haut
-#     nouvelle_image[r+hauteur:,r+largeur:] = image[hauteur-1,largeur-1] #coin droit_bas
-#     nouvelle_image[r:r+hauteur,0:r]  = np.repeat(image[0:hauteur,0],r).reshape(hauteur,r)
-#     nouvelle_image[r:r+hauteur,r+largeur:] = np.repeat(image[0:hauteur,largeur-1],r).reshape(hauteur,r)
-#     #calculer la somme de tableau
-#     tab_fenetre = nouvelle_image[x:x+2*r+1,y:y+2*r+1]
-#     som = np.sum(tab_fenetre)
-#     return som
+def somme_fenetre(image,x,y,r):  # x correspond à ligne, y correspond à colone
+    hauteur,largeur = image.shape
+    #création de fenêtre
+    tab_fenetre = np.zeros((2*r+1,2*r+1))
+    nouvelle_image = np.zeros((hauteur + 2*r, largeur + 2*r))
+    nouvelle_image[r:hauteur+r,r:largeur+r] = image #milieu
+    nouvelle_image[0:r,r:largeur+r] = image[0,:]    #haut
+    nouvelle_image[hauteur+r:,r:r+largeur] = image[hauteur-1,:]  #bas
+    nouvelle_image[0:r,0:r] = image[0,0] #coin gauche_haut
+    nouvelle_image[r+hauteur:,0:r] = image[hauteur-1,0] # coin gauche_bas
+    nouvelle_image[0:r,r+largeur:] = image[0,largeur-1]  #coin droit_haut
+    nouvelle_image[r+hauteur:,r+largeur:] = image[hauteur-1,largeur-1] #coin droit_bas
+    nouvelle_image[r:r+hauteur,0:r]  = np.repeat(image[0:hauteur,0],r).reshape(hauteur,r)
+    nouvelle_image[r:r+hauteur,r+largeur:] = np.repeat(image[0:hauteur,largeur-1],r).reshape(hauteur,r)
+    #calculer la somme de tableau
+    tab_fenetre = nouvelle_image[x:x+2*r+1,y:y+2*r+1]
+    som = np.sum(tab_fenetre)
+    return som
 
 @jit(nopython=True) 
 def somme_fenetre_global(image,r):
