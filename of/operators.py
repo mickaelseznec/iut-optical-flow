@@ -3,16 +3,15 @@ import scipy.signal
 import cv2 as cv
 import matplotlib.pyplot as plt
 import flowpy
+import numba.cuda as cu
 
-def rgb2gray(rgb):
-    # Transforme une image en couleur en une image en niveaux de gris
-    return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
+    #--------------------------------------- Sur CPU ---------------------------------------#
 
 def derivee_x(image):
     # Retourne la derivée en x pour tous les pixels de l'image
     tab_dx = np.zeros_like(image)
     tab_dx[:,-1] = 0
-    tab_dx[:,0:-1] =  image[:,1:] - image[:,0:-1]    
+    tab_dx[:,0:-1] =  image[:,1:] - image[:,0:-1]
     return tab_dx
 
 def derivee_y(image):
@@ -109,24 +108,172 @@ def flux_optique(image1, image2, rayon):
     return dx, dy
 
 def flux_optique_video(video, rayon):
-    cap = cv.VideoCapture(video)
-    ret, image_1 = cap.read()
+    vid = cv.VideoCapture(video)
+    image_1 = vid.read()[1]
     image_1 = cv.cvtColor(np.array(image_1), cv.COLOR_BGR2GRAY)
-    # hauteur, largeur, longueur = image_1.shape
+    hauteur, largeur = image_1.shape
+    image_1 = cv.resize(image_1,(largeur//4,hauteur//4))
+    # plt.imshow(image_1)
+    # plt.show()
 
-    while(cap.isOpened()):
-        ret, image_2 = cap.read()
+    while(vid.isOpened()):
+        ret, image_2 = vid.read()
+        if not ret:
+            break
         image_2 = cv.cvtColor(np.array(image_2), cv.COLOR_BGR2GRAY)
-        # plt.imshow(image_1)
-        # plt.show()
+        image_2 = cv.resize(image_2,(largeur//4,hauteur//4))
         if cv.waitKey(500) & 0xFF == ord('q'):
             break
         x, y = flux_optique(image_1, image_2, rayon)
-        
-        flowpy.show_flow(x,y)
+        img = flowpy.flow_to_color(x,y, max_norm=5)
         # norme = np.sqrt(x**2+y**2)
-        # cv.imshow("sparse optical flow", norme)
+        cv.imshow("sparse optical flow", img)
         image_1 = image_2
-    cap.release()
+    vid.release()
     cv.destroyAllWindows()
-    # pass
+
+    #--------------------------------------- Sur GPU ---------------------------------------#
+
+@cu.jit()
+def derivee_x_GPU(d_image,d_tab_dx):
+    # Retourne la derivée en x pour tous les pixels de l'image
+    h, l = d_image.shape
+    y,x = cu.grid(2)
+    if x >= l or y >= h:
+        return
+    if x == l-1 :
+        d_tab_dx[y,x] = 0
+    else:
+        d_tab_dx[y,x] = d_image[y,x+1] - d_image[y,x]
+       
+    
+
+@cu.jit()
+def derivee_y_GPU(d_image,d_tab_dy):
+    # Retourne la derivée en y pour tous les pixels de l'image
+    h, l = d_image.shape
+    y,x = cu.grid(2)
+    if x >= l or y >= h:
+        return
+    if y == h-1:
+        d_tab_dy[y,x] = 0
+    else:
+        d_tab_dy[y,x] = d_image[y+1,x] - d_image[y,x]
+
+    # tab_dy[-1,:] = 0
+    # tab_dy[0:-1,:] =  image[1:,:] - image[0:-1,:]   
+   
+
+@cu.jit()
+def derivee_t_GPU(d_image_1, d_image_2,d_tab_dt):
+    # Retourne la derivée en t pour tous les pixels de l'image
+    h,l = d_image_1.shape
+    d_tab_dt = np.zeros((h,l))
+    d_tab_dt  =  d_image_2.astype(float) - d_image_1.astype(float)
+    
+
+
+
+# @cu.jit()
+# def somme_fenetre_global(d_image,d_r,d_som_tab):
+#     hauteur,largeur = d_image.shape
+#     #création de fenêtre
+#     tab_fenetre = np.zeros((2*d_r+1,2*d_r+1))
+#     som_tab = np.zeros((hauteur,largeur))
+#     x,y = cu.grid(2)
+#     nouvelle_image = np.zeros((hauteur + 2*d_r, largeur + 2*d_r))
+#     nouvelle_image[d_r:hauteur+d_r,d_r:largeur+d_r] = image #milieu
+#     nouvelle_image[0:d_r,d_r:largeur+d_r] = image[0,:]    #haut
+#     nouvelle_image[hauteur+d_r:,d_r:d_r+largeur] = image[hauteur-1,:]  #bas
+#     nouvelle_image[0:d_r,0:d_r] = image[0,0] #coin gauche_haut
+#     nouvelle_image[d_r+hauteur:,0:d_r] = image[hauteur-1,0] # coin gauche_bas
+#     nouvelle_image[0:d_r,d_r+largeur:] = image[0,largeur-1]  #coin droit_haut
+#     nouvelle_image[d_r+hauteur:,d_r+largeur:] = image[hauteur-1,largeur-1] #coin droit_bas
+#     nouvelle_image[d_r:d_r+hauteur,0:d_r]  = np.repeat(image[0:hauteur,0],d_r).reshape(hauteur,d_r)           
+#     nouvelle_image[d_r:d_r+hauteur,d_r+largeur:]=np.repeat(image[0:hauteur,largeur-1],d_r).reshape(hauteur,d_r)
+
+#     tab_fenetre = nouvelle_image[y:y+2*d_r+1,x:x+2*d_r+1] 
+#     d_som_tab[x,y] = np.sum(tab_fenetre) 
+    
+# @cu.jit()
+# def flot_optique(d_image1,d_image2,d_rayon,d_dx,d_dy):
+#     #création des tableau
+#     somme_tab_dx_2 = np.zeros_like(image1)
+#     somme_tab_dy_2 = np.zeros_like(image1)
+#     somme_tab_dx_dy = np.zeros_like(image1)
+#     somme_tab_dx_dt = np.zeros_like(image1)
+#     #calculer somme_tab_dx_2
+#     blockSize = np.array([32, 32])
+#     gridSize = (np.asarray(array_1.shape) + (blockSize - 1)) // blockSize
+
+#     derivee_x[tuple(gridSize), tuple(blockSize)](d_image_1,d_tab_dx)
+#     tab_dx_2 = d_tab_dx * d_tab_dx
+#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dx_2,d_rayon,d_somme_tab_dx_2)
+    
+#     #calculer somme_tab_dy_2
+#     derivee_y[tuple(gridSize), tuple(blockSize)](d_image_1,d_tab_dy)
+#     tab_dy_2 = d_tab_dy * d_tab_dy
+#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dy_2,d_rayon,d_somme_tab_dy_2)
+    
+
+#     #calculer somme_tab_dx_dy
+#     tab_dx_dy = d_tab_dx * d_tab_dy
+#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dx_dy,d_rayon,d_somme_tab_dx_dy)
+   
+
+#     #calculer somme_tab_dx_dt
+#     derivee_t[tuple(gridSize), tuple(blockSize)](d_image_1,d_image_2,d_tab_dt)
+#     tab_dx_dt = d_tab_dx * -d_tab_dt
+#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dx_dt,d_rayon,d_somme_tab_dx_dt)
+    
+
+#     #calculer somme_tab_dy_dt
+#     tab_dy_dt = tab_dy * -d_tab_dt
+#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dy_dt,d_rayon,d_somme_tab_dy_dt)
+    
+
+#     #calculer AtA
+#     AtA = np.array([[d_somme_tab_dx_2,d_somme_tab_dx_dy],[d_somme_tab_dx_dy,d_somme_tab_dy_2]])
+#     #calculer AtB
+#     AtB = np.array([d_somme_tab_dx_dt,d_somme_tab_dy_dt])
+#     #calculer inv_AtA
+#     inverser_la_matrice[tuple(gridSize), tuple(blockSize)](d_matrice,d_inv_AtA)
+    
+
+#     #calculer dx 
+#     d_dx = d_inv_AtA[0][0] * AtB[0] + d_inv_AtA[0][1] * AtB[1]
+#     d_dy = d_inv_AtA[1][0] * AtB[0] + d_inv_AtA[1][1] * AtB[1]
+   
+# @cu.jit()
+# def inverser_la_matrice(d_matrice,d_tab_inv):
+#     d_tab_inv = d_matrice
+#     determinant =  d_matrice[0,0] * d_matrice[1,1] - d_matrice[0,1] * d_matrice[1,0]
+#     d_dtab_inv[0,0] = d_matrice[1,1]/determinant
+#     d_tab_inv[0,1] = -1*d_matrice[0,1]/determinant
+#     d_tab_inv[1,0] = -1*d_matrice[1,0]/determinant
+#     d_tab_inv[1,1] = d_matrice[0,0]/determinant
+    
+
+
+
+
+# def main():
+   
+#     image1 = np.asarray(Image.open("data/RubberWhale/frame10.png"))
+#     image2 = np.asarray(Image.open("data/RubberWhale/frame11.png"))
+
+#     d_image_1 = cu.to_device(image_1)
+#     d_image_2 = cu.to_device(image_2)
+#     d_r = cu.to_device(r)
+
+#     blockSize = np.array([32, 32])
+#     gridSize = (np.asarray(array_1.shape) + (blockSize - 1)) // blockSize
+
+#     flot_optique[tuple(gridSize), tuple(blockSize)](d_image_1, d_image_2,d_r,d_dx,d_dy)
+#     image_dx = d_dx.copy_to_host()
+#     image_dy = d_dy.copy_to_host()
+#     flowpy.show_flow(image_dx,image_dy)
+    
+
+# if __name__ =="__main__":
+#     main()
