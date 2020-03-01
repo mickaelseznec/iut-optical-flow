@@ -15,6 +15,7 @@ image_1 = np.asarray(Image.open("data/RubberWhale/frame10.png"))
 image_2 = np.asarray(Image.open("data/RubberWhale/frame11.png"))
 d_tab_dx = cu.device_array_like(image_1)
 d_image_1 = cu.to_device(image_1)
+d_image_2 = cu.to_device(image_2)
 
     #----------------------------------------- Pour le Flux Optique normal -----------------------------------------#
 

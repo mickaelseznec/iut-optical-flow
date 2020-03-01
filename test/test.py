@@ -21,6 +21,7 @@ class TestDeriveesImage(unittest.TestCase):
         self.d_tab_dx = cu.device_array_like(self.d_image_1)
         self.d_tab_dy = cu.device_array_like(self.d_image_1)
         self.d_tab_dt = cu.device_array_like(self.d_image_1)
+        self.d_somme_tab = cu.device_array_like(self.d_image_1)
 
     def test_derivee_x(self):
         # A faire ecrire le corps de la fonction dans operators.py et le test
@@ -82,6 +83,14 @@ class TestDeriveesImage(unittest.TestCase):
         derivee_t = self.d_tab_dt.copy_to_host()
         self.assertTrue(np.all(derivee_t == derivee_t_reference))
 
+    def test_somme_fenetre_global_GPU(self):
+        rayon = 2
+        BlockSize = np.array([32,32])
+        gridSize = (np.asarray(self.image_1.shape) + (BlockSize-1))//BlockSize
+        somme_reference = op.somme_fenetre_global(self.image_1, rayon)
+        op.somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](self.d_image_1, rayon, self.d_somme_tab)
+        somme = self.d_somme_tab.copy_to_host()
+        self.assertTrue(np.all(somme == somme_reference))
 
 if __name__ == "__main__":
     unittest.main()

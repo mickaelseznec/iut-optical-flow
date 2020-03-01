@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import flowpy
 import numba.cuda as cu
 
-    #--------------------------------------- Sur CPU ---------------------------------------#
+    #--------------------------------------------------- Sur CPU ---------------------------------------------------#
 
 def derivee_x(image):
     # Retourne la derivée en x pour tous les pixels de l'image
@@ -132,7 +132,7 @@ def flux_optique_video(video, rayon):
     vid.release()
     cv.destroyAllWindows()
 
-    #--------------------------------------- Sur GPU ---------------------------------------#
+    #--------------------------------------------------- Sur GPU ---------------------------------------------------#
 
 @cu.jit()
 def derivee_x_GPU(d_image,d_tab_dx):
@@ -144,8 +144,7 @@ def derivee_x_GPU(d_image,d_tab_dx):
     if x == l-1 :
         d_tab_dx[y,x] = 0
     else:
-        d_tab_dx[y,x] = d_image[y,x+1] - d_image[y,x]
-       
+        d_tab_dx[y,x] = d_image[y,x+1] - d_image[y,x]     
     
 
 @cu.jit()
@@ -158,42 +157,39 @@ def derivee_y_GPU(d_image,d_tab_dy):
     if y == h-1:
         d_tab_dy[y,x] = 0
     else:
-        d_tab_dy[y,x] = d_image[y+1,x] - d_image[y,x]
-
-    # tab_dy[-1,:] = 0
-    # tab_dy[0:-1,:] =  image[1:,:] - image[0:-1,:]   
+        d_tab_dy[y,x] = d_image[y+1,x] - d_image[y,x]  
    
 
 @cu.jit()
 def derivee_t_GPU(d_image_1, d_image_2,d_tab_dt):
     # Retourne la derivée en t pour tous les pixels de l'image
-    h,l = d_image_1.shape
-    d_tab_dt = np.zeros((h,l))
-    d_tab_dt  =  d_image_2.astype(float) - d_image_1.astype(float)
+    h, l = cu.grid(2)
+    d_tab_dt[h,l] =  d_image_2[h,l] - d_image_1[h,l]
     
 
 
 
-# @cu.jit()
-# def somme_fenetre_global(d_image,d_r,d_som_tab):
-#     hauteur,largeur = d_image.shape
-#     #création de fenêtre
-#     tab_fenetre = np.zeros((2*d_r+1,2*d_r+1))
-#     som_tab = np.zeros((hauteur,largeur))
-#     x,y = cu.grid(2)
-#     nouvelle_image = np.zeros((hauteur + 2*d_r, largeur + 2*d_r))
-#     nouvelle_image[d_r:hauteur+d_r,d_r:largeur+d_r] = image #milieu
-#     nouvelle_image[0:d_r,d_r:largeur+d_r] = image[0,:]    #haut
-#     nouvelle_image[hauteur+d_r:,d_r:d_r+largeur] = image[hauteur-1,:]  #bas
-#     nouvelle_image[0:d_r,0:d_r] = image[0,0] #coin gauche_haut
-#     nouvelle_image[d_r+hauteur:,0:d_r] = image[hauteur-1,0] # coin gauche_bas
-#     nouvelle_image[0:d_r,d_r+largeur:] = image[0,largeur-1]  #coin droit_haut
-#     nouvelle_image[d_r+hauteur:,d_r+largeur:] = image[hauteur-1,largeur-1] #coin droit_bas
-#     nouvelle_image[d_r:d_r+hauteur,0:d_r]  = np.repeat(image[0:hauteur,0],d_r).reshape(hauteur,d_r)           
-#     nouvelle_image[d_r:d_r+hauteur,d_r+largeur:]=np.repeat(image[0:hauteur,largeur-1],d_r).reshape(hauteur,d_r)
+@cu.jit()
+def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
+    hauteur,largeur = d_image.shape
+    #création de fenêtre
+    h,l = cu.grid(2)
+    result = 0
+    for i in range((d_r*2)+1):
+        for j in range((d_r*2)+1):
+            indice_l = l-d_r + i
+            indice_h = h-d_r + j
+            if (indice_h < 0): 
+                indice_h = 0
+            if (indice_l < 0):
+                indice_l = 0
+            if (indice_l >= largeur):
+                indice_l = largeur-1
+            if (indice_h >= hauteur):
+                indice_h = hauteur-1
+            result = result + d_image[indice_h, indice_l]
+    d_som_tab[h,l] = result 
 
-#     tab_fenetre = nouvelle_image[y:y+2*d_r+1,x:x+2*d_r+1] 
-#     d_som_tab[x,y] = np.sum(tab_fenetre) 
     
 # @cu.jit()
 # def flot_optique(d_image1,d_image2,d_rayon,d_dx,d_dy):
@@ -273,7 +269,3 @@ def derivee_t_GPU(d_image_1, d_image_2,d_tab_dt):
 #     image_dx = d_dx.copy_to_host()
 #     image_dy = d_dy.copy_to_host()
 #     flowpy.show_flow(image_dx,image_dy)
-    
-
-# if __name__ =="__main__":
-#     main()
