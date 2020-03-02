@@ -64,33 +64,33 @@ class TestDeriveesImage(unittest.TestCase):
         gridSize = (np.asarray(self.image_1.shape) + (BlockSize-1))//BlockSize
         derivee_x_reference = op.derivee_x(self.image_1)
         op.derivee_x_GPU[list(gridSize), list(BlockSize)](self.d_image_1,self.d_tab_dx)
-        derivee_x = self.d_tab_dx.copy_to_host()
-        self.assertTrue(np.all(derivee_x == derivee_x_reference))
+        derivee_x_GPU = self.d_tab_dx.copy_to_host()
+        self.assertTrue(np.all(derivee_x_GPU == derivee_x_reference))
 
     def test_derivee_y_GPU(self):
         BlockSize = np.array([32,32])
         gridSize = (np.asarray(self.image_1.shape) + (BlockSize-1))//BlockSize
         derivee_y_reference = op.derivee_y(self.image_1)
         op.derivee_y_GPU[list(gridSize), list(BlockSize)](self.d_image_1,self.d_tab_dy)
-        derivee_y = self.d_tab_dy.copy_to_host()
-        self.assertTrue(np.all(derivee_y == derivee_y_reference))
+        derivee_y_GPU = self.d_tab_dy.copy_to_host()
+        self.assertTrue(np.all(derivee_y_GPU == derivee_y_reference))
 
     def test_derivee_t_GPU(self):
         BlockSize = np.array([32,32])
         gridSize = (np.asarray(self.image_1.shape) + (BlockSize-1))//BlockSize
         derivee_t_reference = op.derivee_t(self.image_1, self.image_2)
         op.derivee_t_GPU[list(gridSize), list(BlockSize)](self.d_image_1, self.d_image_2, self.d_tab_dt)
-        derivee_t = self.d_tab_dt.copy_to_host()
-        self.assertTrue(np.all(derivee_t == derivee_t_reference))
+        derivee_t_GPU = self.d_tab_dt.copy_to_host()
+        self.assertTrue(np.all(derivee_t_GPU == derivee_t_reference))
 
     def test_somme_fenetre_global_GPU(self):
-        rayon = 2
+        rayon = 1
         BlockSize = np.array([32,32])
         gridSize = (np.asarray(self.image_1.shape) + (BlockSize-1))//BlockSize
         somme_reference = op.somme_fenetre_global(self.image_1, rayon)
         op.somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](self.d_image_1, rayon, self.d_somme_tab)
-        somme = self.d_somme_tab.copy_to_host()
-        self.assertTrue(np.all(somme == somme_reference))
+        somme_GPU = self.d_somme_tab.copy_to_host()
+        self.assertTrue(np.all(somme_GPU == somme_reference))
 
 if __name__ == "__main__":
     unittest.main()

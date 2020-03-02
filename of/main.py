@@ -19,12 +19,12 @@ d_image_2 = cu.to_device(image_2)
 
     #----------------------------------------- Pour le Flux Optique normal -----------------------------------------#
 
-image_dx, image_dy = op.flux_optique(image_1,image_2,29)
-flowpy.show_flow(image_dx,image_dy)
+# image_dx, image_dy = op.flux_optique(image_1,image_2,29)
+# flowpy.show_flow(image_dx,image_dy)
 
     #----------------------------------------- Pour le Flux Optique Vidéo -----------------------------------------#
 
-# op.flux_optique_video("data/foot.mp4",21)
+op.flux_optique_video("data/shibuya.mp4",21)
 # op.show_camera()
 
     #----------------------------------------------- Pour des tests -----------------------------------------------#

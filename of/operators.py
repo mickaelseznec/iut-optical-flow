@@ -109,26 +109,30 @@ def flux_optique(image1, image2, rayon):
 
 def flux_optique_video(video, rayon):
     vid = cv.VideoCapture(video)
-    image_1 = vid.read()[1]
-    image_1 = cv.cvtColor(np.array(image_1), cv.COLOR_BGR2GRAY)
+    image_1_color = vid.read()[1]
+    image_1 = cv.cvtColor(np.array(image_1_color), cv.COLOR_BGR2GRAY)
     hauteur, largeur = image_1.shape
     image_1 = cv.resize(image_1,(largeur//4,hauteur//4))
+    image_1_color = cv.resize(image_1_color,(largeur//4,hauteur//4))
     # plt.imshow(image_1)
     # plt.show()
 
     while(vid.isOpened()):
-        ret, image_2 = vid.read()
+        ret, image_2_color = vid.read()
         if not ret:
             break
-        image_2 = cv.cvtColor(np.array(image_2), cv.COLOR_BGR2GRAY)
+        image_2 = cv.cvtColor(np.array(image_2_color), cv.COLOR_BGR2GRAY)
         image_2 = cv.resize(image_2,(largeur//4,hauteur//4))
+        image_2_color = cv.resize(image_2_color,(largeur//4,hauteur//4))
         if cv.waitKey(500) & 0xFF == ord('q'):
             break
         x, y = flux_optique(image_1, image_2, rayon)
         img = flowpy.flow_to_color(x,y, max_norm=5)
         # norme = np.sqrt(x**2+y**2)
-        cv.imshow("sparse optical flow", img)
+        output = cv.add(image_1_color, img)
+        cv.imshow("sparse optical flow", output)
         image_1 = image_2
+        image_1_color = image_2_color
     vid.release()
     cv.destroyAllWindows()
 
@@ -177,8 +181,8 @@ def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
     result = 0
     for i in range((d_r*2)+1):
         for j in range((d_r*2)+1):
-            indice_l = l-d_r + i
-            indice_h = h-d_r + j
+            indice_l = l-d_r + j
+            indice_h = h-d_r + i
             if (indice_h < 0): 
                 indice_h = 0
             if (indice_l < 0):
