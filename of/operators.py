@@ -180,10 +180,10 @@ def multiplication_2_tab_GPU(d_tab_1, d_tab_2, d_coef, d_tab_mult):
     
 
 def inverser_la_matrice_GPU(matrice):
-    d_matrice1 = cu.to_device(matrice[0,0])
-    d_matrice2 = cu.to_device(matrice[0,1])
-    d_matrice3 = cu.to_device(matrice[1,0])
-    d_matrice4 = cu.to_device(matrice[1,1])
+    d_matrice1 = cu.to_device(matrice[0,0].astype(float))
+    d_matrice2 = cu.to_device(matrice[0,1].astype(float))
+    d_matrice3 = cu.to_device(matrice[1,0].astype(float))
+    d_matrice4 = cu.to_device(matrice[1,1].astype(float))
     d_premier = cu.device_array_like(d_matrice1)
     d_deuxieme = cu.device_array_like(d_matrice2)
 
@@ -191,10 +191,10 @@ def inverser_la_matrice_GPU(matrice):
     gridSize = (np.asarray(matrice[0,0].shape) + (BlockSize-1))//BlockSize
     # print(d_matrice1.copy_to_host())
     # print(d_matrice3.copy_to_host())
-    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice1, d_matrice4, 1, d_premier) 
-    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice2, d_matrice3, 1, d_deuxieme)
-    premier = float(d_premier.copy_to_host())
-    deuxieme = float(d_deuxieme.copy_to_host())
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice1, d_matrice4, 1., d_premier) 
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice2, d_matrice3, 1., d_deuxieme)
+    premier = d_premier.copy_to_host()
+    deuxieme = d_deuxieme.copy_to_host()
     # print(premier)
     determinant = premier-deuxieme
     d_tab_inv = np.zeros_like(matrice)

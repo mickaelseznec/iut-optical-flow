@@ -39,8 +39,8 @@ gridSize = (np.asarray(image_4.shape) + (BlockSize-1))//BlockSize
 
 
 
-# image_dx, image_dy = op.flux_optique(image_1,image_2,29)
-# flowpy.show_flow(image_dx,image_dy)
+image_dx, image_dy = op.flux_optique(image_1,image_2,29)
+flowpy.show_flow(image_dx,image_dy)
 
     #----------------------------------------- Pour le Flux Optique Vidéo -----------------------------------------#
 
