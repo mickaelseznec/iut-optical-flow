@@ -16,12 +16,21 @@ class TestDeriveesImage(unittest.TestCase):
         self.image_1 = np.array([5,3,1,6,8,0,1,2,3]).reshape(3, 3)
         self.image_2 = np.array([4,5,7,1,0,6,3,3,2]).reshape(3,3)
         self.image_3 = np.array([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,1,1,1,1,2,6,3,8,4]).reshape(5,5)
+        self.image_4 = np.array([4,5,7,1,0,6,3,3,2,8,4,1]).reshape(4,3)
+        self.tab_1 = np.array([5,8,13,123,42,57,2,1,3]).reshape(3,3)
+        self.tab_2 = np.array([5,10,12,42,47,45,39,27,36]).reshape(3,3)
+        self.matrice = np.array([[self.tab_1,self.tab_1],[self.tab_1,self.tab_2]])
+        self.image_5 = np.array([8,4,6,2,9,7,18,48,3]).reshape(3,3)
         self.d_image_1 = cu.to_device(self.image_1)
         self.d_image_2 = cu.to_device(self.image_2)
+        self.d_image_4 = cu.to_device(self.image_4)
+        self.d_image_5 = cu.to_device(self.image_5)
+        self.d_tab_2 = cu.to_device(self.tab_2)
         self.d_tab_dx = cu.device_array_like(self.d_image_1)
         self.d_tab_dy = cu.device_array_like(self.d_image_1)
         self.d_tab_dt = cu.device_array_like(self.d_image_1)
-        self.d_somme_tab = cu.device_array_like(self.d_image_1)
+        self.d_somme_tab = cu.device_array_like(self.d_image_4)
+        self.d_mul = cu.device_array_like(self.d_image_1)
 
     def test_derivee_x(self):
         # A faire ecrire le corps de la fonction dans operators.py et le test
@@ -54,10 +63,8 @@ class TestDeriveesImage(unittest.TestCase):
         self.assertTrue(np.all(somme_tab == somme_tab_reference))   
 
     def test_flot_optique(self):
-        # print(self.image_1)
-        # non = op.flux_optique(self.image_1, self.image_2, 1)[0]
-        # print(non)
-        pass
+        return
+        x, y = op.flux_optique(self.image_1, self.image_2, 1)[0]
     
     def test_derivee_x_GPU(self):
         BlockSize = np.array([32,32])
@@ -83,12 +90,29 @@ class TestDeriveesImage(unittest.TestCase):
         derivee_t_GPU = self.d_tab_dt.copy_to_host()
         self.assertTrue(np.all(derivee_t_GPU == derivee_t_reference))
 
-    def test_somme_fenetre_global_GPU(self):
-        rayon = 1
+    def test_multiplication_2_tab(self):
         BlockSize = np.array([32,32])
-        gridSize = (np.asarray(self.image_1.shape) + (BlockSize-1))//BlockSize
-        somme_reference = op.somme_fenetre_global(self.image_1, rayon)
-        op.somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](self.d_image_1, rayon, self.d_somme_tab)
+        gridSize = (np.asarray(self.image_5.shape) + (BlockSize-1))//BlockSize
+        mul_reference = self.tab_2*self.image_1
+        op.multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](self.d_tab_2,self.d_image_1,1,self.d_mul)
+        mul_GPU = self.d_mul.copy_to_host()
+        self.assertTrue(np.all(mul_GPU == mul_reference))
+    
+    def test_inverser_matrice_GPU(self):
+        # return 0
+        # print(self.matrice)
+        matrice_reference = op.inverser_matrice(self.matrice)
+        # print(self.matrice)
+        matrice_GPU = op.inverser_la_matrice_GPU(self.matrice)
+        self.assertTrue(np.all(matrice_GPU == matrice_reference))
+
+    def test_somme_fenetre_global_GPU(self):
+        # return 0
+        rayon = 4
+        BlockSize = np.array([32,32])
+        gridSize = (np.asarray(self.image_4.shape) + (BlockSize-1))//BlockSize
+        somme_reference = op.somme_fenetre_global(self.image_4, rayon)
+        op.somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](self.d_image_4, rayon, self.d_somme_tab)
         somme_GPU = self.d_somme_tab.copy_to_host()
         self.assertTrue(np.all(somme_GPU == somme_reference))
 

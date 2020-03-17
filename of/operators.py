@@ -69,9 +69,9 @@ def somme_fenetre_global(image,r):
     return somme_fenetre
 
 def inverser_matrice(matrice):
-    tab_inv = matrice
+    tab_inv = np.zeros_like(matrice)
     determinant =  matrice[0,0] * matrice[1,1] - matrice[0,1] * matrice[1,0]
-    # print(determinant)
+    # print(matrice[0,0] * matrice[1,1])
     tab_inv[0,0] = matrice[1,1]
     tab_inv[0,1] = -1*matrice[0,1]
     tab_inv[1,0] = -1*matrice[1,0]
@@ -109,7 +109,7 @@ def flux_optique(image1, image2, rayon):
 
 def flux_optique_video(video, rayon):
     vid = cv.VideoCapture(video)
-    image_1_color = vid.read()[1]
+    ret, image_1_color = vid.read()
     image_1 = cv.cvtColor(np.array(image_1_color), cv.COLOR_BGR2GRAY)
     hauteur, largeur = image_1.shape
     image_1 = cv.resize(image_1,(largeur//4,hauteur//4))
@@ -169,16 +169,57 @@ def derivee_t_GPU(d_image_1, d_image_2,d_tab_dt):
     # Retourne la derivée en t pour tous les pixels de l'image
     h, l = cu.grid(2)
     d_tab_dt[h,l] =  d_image_2[h,l] - d_image_1[h,l]
+
+@cu.jit()
+def multiplication_2_tab_GPU(d_tab_1, d_tab_2, d_coef, d_tab_mult):
+    hauteur, largeur = d_tab_1.shape
+    h,l = cu.grid(2)
+    if (h >= hauteur or l >= largeur):
+        return
+    d_tab_mult[h,l] = d_tab_1[h,l]*d_coef*d_tab_2[h,l]
     
 
+def inverser_la_matrice_GPU(matrice):
+    d_matrice1 = cu.to_device(matrice[0,0])
+    d_matrice2 = cu.to_device(matrice[0,1])
+    d_matrice3 = cu.to_device(matrice[1,0])
+    d_matrice4 = cu.to_device(matrice[1,1])
+    d_premier = cu.device_array_like(d_matrice1)
+    d_deuxieme = cu.device_array_like(d_matrice2)
+
+    BlockSize = np.array([32,32])
+    gridSize = (np.asarray(matrice[0,0].shape) + (BlockSize-1))//BlockSize
+    # print(d_matrice1.copy_to_host())
+    # print(d_matrice3.copy_to_host())
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice1, d_matrice4, 1, d_premier) 
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice2, d_matrice3, 1, d_deuxieme)
+    premier = float(d_premier.copy_to_host())
+    deuxieme = float(d_deuxieme.copy_to_host())
+    # print(premier)
+    determinant = premier-deuxieme
+    d_tab_inv = np.zeros_like(matrice)
+    d_tab_inv[0,0] = matrice[1,1]/determinant
+    d_tab_inv[0,1] = -1*matrice[0,1]/determinant
+    d_tab_inv[1,0] = -1*matrice[1,0]/determinant
+    d_tab_inv[1,1] = matrice[0,0]/determinant 
+
+
+
+    # tab_inv[0,0] = matrice[1,1]
+    # tab_inv[0,1] = -1*matrice[0,1]
+    # tab_inv[1,0] = -1*matrice[1,0]
+    # tab_inv[1,1] = matrice[0,0]
+    return d_tab_inv
 
 
 @cu.jit()
 def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
-    hauteur,largeur = d_image.shape
+    hauteur,largeur = d_image.shape  
     #création de fenêtre
-    h,l = cu.grid(2)
-    result = 0
+    h,l = cu.grid(2) 
+    result= 0
+    if (h >= hauteur or l >= largeur):
+        return
     for i in range((d_r*2)+1):
         for j in range((d_r*2)+1):
             indice_l = l-d_r + j
@@ -191,10 +232,13 @@ def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
                 indice_l = largeur-1
             if (indice_h >= hauteur):
                 indice_h = hauteur-1
-            result = result + d_image[indice_h, indice_l]
-    d_som_tab[h,l] = result 
+            result += d_image[indice_h, indice_l]
+    d_som_tab[h,l] = result
 
-    
+
+
+
+   
 # @cu.jit()
 # def flot_optique(d_image1,d_image2,d_rayon,d_dx,d_dy):
 #     #création des tableau
@@ -244,14 +288,7 @@ def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
 #     d_dx = d_inv_AtA[0][0] * AtB[0] + d_inv_AtA[0][1] * AtB[1]
 #     d_dy = d_inv_AtA[1][0] * AtB[0] + d_inv_AtA[1][1] * AtB[1]
    
-# @cu.jit()
-# def inverser_la_matrice(d_matrice,d_tab_inv):
-#     d_tab_inv = d_matrice
-#     determinant =  d_matrice[0,0] * d_matrice[1,1] - d_matrice[0,1] * d_matrice[1,0]
-#     d_dtab_inv[0,0] = d_matrice[1,1]/determinant
-#     d_tab_inv[0,1] = -1*d_matrice[0,1]/determinant
-#     d_tab_inv[1,0] = -1*d_matrice[1,0]/determinant
-#     d_tab_inv[1,1] = d_matrice[0,0]/determinant
+
     
 
 
