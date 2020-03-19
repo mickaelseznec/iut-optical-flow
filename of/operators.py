@@ -170,6 +170,7 @@ def derivee_t_GPU(d_image_1, d_image_2,d_tab_dt):
     h, l = cu.grid(2)
     d_tab_dt[h,l] =  d_image_2[h,l] - d_image_1[h,l]
 
+
 @cu.jit()
 def multiplication_2_tab_GPU(d_tab_1, d_tab_2, d_coef, d_tab_mult):
     hauteur, largeur = d_tab_1.shape
@@ -177,41 +178,39 @@ def multiplication_2_tab_GPU(d_tab_1, d_tab_2, d_coef, d_tab_mult):
     if (h >= hauteur or l >= largeur):
         return
     d_tab_mult[h,l] = d_tab_1[h,l]*d_coef*d_tab_2[h,l]
+
+
+@cu.jit()
+def division_2_tab_GPU(d_numerateur, d_denominateur, d_coef, d_tab_sortie):
+    hauteur, largeur = d_numerateur.shape
+    h,l = cu.grid(2)
+    if (h >= hauteur or l >= largeur):
+        return
+    d_tab_sortie[h,l] = d_coef*d_numerateur[h,l]/d_denominateur[h,l]
+
+@cu.jit()
+def soustraction_2_tab_GPU(d_tab1, d_tab2, d_tab_sortie):
+    hauteur, largeur = d_tab1.shape
+    h,l = cu.grid(2)
+    if (h >= hauteur or l >= largeur):
+        return
+    d_tab_sortie[h,l] = d_tab1[h,l]-d_tab2[h,l]
     
 
-def inverser_la_matrice_GPU(matrice):
-    # d_matrice1 = cu.to_device(matrice[0,0].astype(float))
-    # d_matrice2 = cu.to_device(matrice[0,1].astype(float))
-    # d_matrice3 = cu.to_device(matrice[1,0].astype(float))
-    # d_matrice4 = cu.to_device(matrice[1,1].astype(float))
-    d_matrice = cu.to_device(matrice.astype(float))
-    premier = np.zeros_like(matrice[0,0].astype(float))
-    d_premier = cu.device_array_like(premier)
-    d_deuxieme = cu.device_array_like(premier)
-
+def inverser_la_matrice_GPU(d_matrice, d_premier, d_deuxieme, d_determinant, d_matrice_inverse):
     BlockSize = np.array([32,32])
-    gridSize = (np.asarray(matrice[0,0].shape) + (BlockSize-1))//BlockSize
-    # print(d_matrice1.copy_to_host())
-    # print(d_matrice3.copy_to_host())
+    gridSize = (np.asarray(d_matrice[0,0].shape) + (BlockSize-1))//BlockSize
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,0], d_matrice[1,1], 1., d_premier) 
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,1], d_matrice[1,0], 1., d_deuxieme)
-    premier = d_premier.copy_to_host()
-    deuxieme = d_deuxieme.copy_to_host()
-    # print(premier)
-    determinant = premier-deuxieme
-    d_tab_inv = np.zeros_like(matrice.astype(float))
-    d_tab_inv[0,0] = matrice[1,1]/determinant
-    d_tab_inv[0,1] = -1*matrice[0,1]/determinant
-    d_tab_inv[1,0] = -1*matrice[1,0]/determinant
-    d_tab_inv[1,1] = matrice[0,0]/determinant 
+    
+    
+    soustraction_2_tab_GPU[list(gridSize), list(BlockSize)](d_premier, d_deuxieme, d_determinant)
 
 
-
-    # tab_inv[0,0] = matrice[1,1]
-    # tab_inv[0,1] = -1*matrice[0,1]
-    # tab_inv[1,0] = -1*matrice[1,0]
-    # tab_inv[1,1] = matrice[0,0]
-    return d_tab_inv
+    division_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[1,1],d_determinant,1.,d_matrice_inverse[0,0])
+    division_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,1],d_determinant,-1.,d_matrice_inverse[0,1])
+    division_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[1,0],d_determinant,-1.,d_matrice_inverse[1,0])
+    division_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,0],d_determinant,1.,d_matrice_inverse[1,1]) 
 
 
 @cu.jit()
@@ -238,9 +237,6 @@ def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
     d_som_tab[h,l] = result
 
 
-
-
-   
 # @cu.jit()
 # def flot_optique(d_image1,d_image2,d_rayon,d_dx,d_dy):
 #     #création des tableau
@@ -290,25 +286,3 @@ def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
 #     d_dx = d_inv_AtA[0][0] * AtB[0] + d_inv_AtA[0][1] * AtB[1]
 #     d_dy = d_inv_AtA[1][0] * AtB[0] + d_inv_AtA[1][1] * AtB[1]
    
-
-    
-
-
-
-
-# def main():
-   
-#     image1 = np.asarray(Image.open("data/RubberWhale/frame10.png"))
-#     image2 = np.asarray(Image.open("data/RubberWhale/frame11.png"))
-
-#     d_image_1 = cu.to_device(image_1)
-#     d_image_2 = cu.to_device(image_2)
-#     d_r = cu.to_device(r)
-
-#     blockSize = np.array([32, 32])
-#     gridSize = (np.asarray(array_1.shape) + (blockSize - 1)) // blockSize
-
-#     flot_optique[tuple(gridSize), tuple(blockSize)](d_image_1, d_image_2,d_r,d_dx,d_dy)
-#     image_dx = d_dx.copy_to_host()
-#     image_dy = d_dy.copy_to_host()
-#     flowpy.show_flow(image_dx,image_dy)

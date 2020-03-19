@@ -18,8 +18,9 @@ class TestDeriveesImage(unittest.TestCase):
         self.image_3 = np.array([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,1,1,1,1,2,6,3,8,4]).reshape(5,5)
         self.image_4 = np.array([4,5,7,1,0,6,3,3,2,8,4,1]).reshape(4,3)
         self.tab_1 = np.array([5,8,13,123,42,57,2,1,3]).reshape(3,3)
-        self.tab_2 = np.array([5,10,12,42,47,45,39,27,36]).reshape(3,3)
+        self.tab_2 = np.array([6,10,12,42,47,45,39,27,36]).reshape(3,3)
         self.matrice = np.array([[self.tab_1,self.tab_1],[self.tab_1,self.tab_2]])
+        self.d_matrice = cu.to_device(self.matrice.astype(float))
         self.image_5 = np.array([8,4,6,2,9,7,18,48,3]).reshape(3,3)
         self.d_image_1 = cu.to_device(self.image_1)
         self.d_image_2 = cu.to_device(self.image_2)
@@ -31,6 +32,10 @@ class TestDeriveesImage(unittest.TestCase):
         self.d_tab_dt = cu.device_array_like(self.d_image_1)
         self.d_somme_tab = cu.device_array_like(self.d_image_4)
         self.d_mul = cu.device_array_like(self.d_image_1)
+        self.d_premier = cu.device_array_like(self.matrice[0,0].astype(float))
+        self.d_deuxieme = cu.device_array_like(self.matrice[0,0].astype(float))
+        self.d_determinant = cu.device_array_like(self.matrice[0,0].astype(float))
+        self.d_matrice_inverse = cu.device_array_like(self.matrice.astype(float))
 
     def test_derivee_x(self):
         # A faire ecrire le corps de la fonction dans operators.py et le test
@@ -99,11 +104,13 @@ class TestDeriveesImage(unittest.TestCase):
         self.assertTrue(np.all(mul_GPU == mul_reference))
     
     def test_inverser_matrice_GPU(self):
-        # return 0
-        # print(self.matrice)
+        BlockSize = np.array([32,32])
+        gridSize = (np.asarray(self.matrice[0,0].shape) + (BlockSize-1))//BlockSize
         matrice_reference = op.inverser_matrice(self.matrice)
         # print(self.matrice)
-        matrice_GPU = op.inverser_la_matrice_GPU(self.matrice)
+        # matrice_GPU = op.inverser_la_matrice_mi_GPU(self.matrice)
+        op.inverser_la_matrice_GPU(self.d_matrice,self.d_premier,self.d_deuxieme,self.d_determinant, self.d_matrice_inverse)
+        matrice_GPU = self.d_matrice_inverse.copy_to_host()
         self.assertTrue(np.all(matrice_GPU == matrice_reference))
 
     def test_somme_fenetre_global_GPU(self):
