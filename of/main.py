@@ -13,19 +13,20 @@ import numba.cuda as cu
 
 image_1 = np.asarray(Image.open("data/RubberWhale/frame10.png"))
 image_2 = np.asarray(Image.open("data/RubberWhale/frame11.png"))
+matrice22 = np.array([[image_1,image_1],[image_1,image_1]])
+matrice11 = np.array([image_1,image_1])
+
 # GPU
-d_tab_dx = cu.device_array_like(image_1)
 d_image_1 = cu.to_device(image_1)
 d_image_2 = cu.to_device(image_2)
+d_dx = cu.device_array_like(image_1)
+d_dy = cu.device_array_like(image_1)
+d_matrice22 = cu.to_device(matrice22)
+d_matrice11 = cu.to_device(matrice11)
 
 
-
-
-image_4 = np.array([4,5,7,1,0,6,3,3,2,8,4,1]).reshape(4,3)
-d_image_4 = cu.to_device(image_4)
-d_somme_tab = cu.device_array_like(d_image_4)
-BlockSize = np.array([32,32])
-gridSize = (np.asarray(image_4.shape) + (BlockSize-1))//BlockSize
+# BlockSize = np.array([32,32])
+# gridSize = (np.asarray(image_1.shape) + (BlockSize-1))//BlockSize
 
     #----------------------------------------- Pour le Flux Optique normal -----------------------------------------#
 # image_dy = op.derivee_y(image_1)
@@ -44,14 +45,13 @@ gridSize = (np.asarray(image_4.shape) + (BlockSize-1))//BlockSize
 
     #----------------------------------------- Pour le Flux Optique Vidéo -----------------------------------------#
 
-op.flux_optique_video("data/shibuya.mp4",21)
+# op.flux_optique_video("data/shibuya.mp4",21)
 # op.show_camera()
 
     #------------------------------------------ Pour le Flux Optique GPU ------------------------------------------#
 
-# op.somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_image_4, 1, d_somme_tab)
-# somme_GPU = d_somme_tab.copy_to_host()
-# print(somme_GPU)
+image_dx, image_dy = op.flux_optique_GPU(d_image_1,d_image_2,21,d_matrice22,d_matrice11)
+flowpy.show_flow(image_dx,image_dy)
     #----------------------------------------------- Pour des tests -----------------------------------------------#
 
 # BlockSize = np.array([32,32])

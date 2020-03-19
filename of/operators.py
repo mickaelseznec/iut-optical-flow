@@ -195,11 +195,20 @@ def soustraction_2_tab_GPU(d_tab1, d_tab2, d_tab_sortie):
     if (h >= hauteur or l >= largeur):
         return
     d_tab_sortie[h,l] = d_tab1[h,l]-d_tab2[h,l]
+
+@cu.jit()
+def addition_2_tab_GPU(d_tab1, d_tab2, d_tab_sortie):
+    hauteur, largeur = d_tab1.shape
+    h,l = cu.grid(2)
+    if (h >= hauteur or l >= largeur):
+        return
+    d_tab_sortie[h,l] = d_tab1[h,l]+d_tab2[h,l]
     
 
 def inverser_la_matrice_GPU(d_matrice, d_premier, d_deuxieme, d_determinant, d_matrice_inverse):
     BlockSize = np.array([32,32])
     gridSize = (np.asarray(d_matrice[0,0].shape) + (BlockSize-1))//BlockSize
+
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,0], d_matrice[1,1], 1., d_premier) 
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,1], d_matrice[1,0], 1., d_deuxieme)
     
@@ -237,52 +246,88 @@ def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
     d_som_tab[h,l] = result
 
 
-# @cu.jit()
-# def flot_optique(d_image1,d_image2,d_rayon,d_dx,d_dy):
-#     #création des tableau
-#     somme_tab_dx_2 = np.zeros_like(image1)
-#     somme_tab_dy_2 = np.zeros_like(image1)
-#     somme_tab_dx_dy = np.zeros_like(image1)
-#     somme_tab_dx_dt = np.zeros_like(image1)
-#     #calculer somme_tab_dx_2
-#     blockSize = np.array([32, 32])
-#     gridSize = (np.asarray(array_1.shape) + (blockSize - 1)) // blockSize
-
-#     derivee_x[tuple(gridSize), tuple(blockSize)](d_image_1,d_tab_dx)
-#     tab_dx_2 = d_tab_dx * d_tab_dx
-#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dx_2,d_rayon,d_somme_tab_dx_2)
+def flux_optique_GPU(d_image1, d_image2, d_rayon,d_matrice22, d_matrice11):
+    BlockSize = np.array([32,32])
+    gridSize = (np.asarray(d_image1.shape) + (BlockSize-1))//BlockSize
+    #création des tableau
+    d_tab_dx = cu.device_array_like(d_image1)
+    d_tab_dx_2 = cu.device_array_like(d_image1)
+    d_somme_tab_dx_2 = cu.device_array_like(d_image1)
+    d_tab_dy = cu.device_array_like(d_image1)
+    d_tab_dy_2 = cu.device_array_like(d_image1)
+    d_somme_tab_dy_2 = cu.device_array_like(d_image1)
+    d_tab_dx_dy = cu.device_array_like(d_image1)
+    d_somme_tab_dx_dy = cu.device_array_like(d_image1)
+    d_tab_dt = cu.device_array_like(d_image1)
+    d_tab_dx_dt = cu.device_array_like(d_image1)
+    d_somme_tab_dx_dt = cu.device_array_like(d_image1)
+    d_tab_dy_dt = cu.device_array_like(d_image1)
+    d_somme_tab_dy_dt = cu.device_array_like(d_image1)
+    d_AtA = cu.device_array_like(d_matrice22)
+    d_Atb = cu.device_array_like(d_matrice11)
+    d_inv_AtA = cu.device_array_like(d_matrice22)
+    d_premier = cu.device_array_like(d_image1)
+    d_deuxieme = cu.device_array_like(d_image1)
+    d_determinant = cu.device_array_like(d_image1)
+    d_dx = cu.device_array_like(d_image1)
+    d_dx1 = cu.device_array_like(d_image1)
+    d_dx2 = cu.device_array_like(d_image1)
+    d_dy = cu.device_array_like(d_image1)
+    d_dy1 = cu.device_array_like(d_image1)
+    d_dy2 = cu.device_array_like(d_image1)
     
-#     #calculer somme_tab_dy_2
-#     derivee_y[tuple(gridSize), tuple(blockSize)](d_image_1,d_tab_dy)
-#     tab_dy_2 = d_tab_dy * d_tab_dy
-#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dy_2,d_rayon,d_somme_tab_dy_2)
-    
 
-#     #calculer somme_tab_dx_dy
-#     tab_dx_dy = d_tab_dx * d_tab_dy
-#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dx_dy,d_rayon,d_somme_tab_dx_dy)
+    #calculer somme_tab_dx_2
+    derivee_x_GPU[list(gridSize), list(BlockSize)](d_image1, d_tab_dx)
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dx, d_tab_dx, 1., d_tab_dx_2)
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_2, d_rayon, d_somme_tab_dx_2)
+    
+    #calculer somme_tab_dy_2
+    derivee_y_GPU[list(gridSize), list(BlockSize)](d_image1, d_tab_dy)
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dy, d_tab_dy, 1., d_tab_dy_2)
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dy_2, d_rayon, d_somme_tab_dy_2)
+    
+    #calculer somme_tab_dx_dy
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dx, d_tab_dy, 1., d_tab_dx_dy)
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_dy,d_rayon,d_somme_tab_dx_dy)
    
+    #calculer somme_tab_dx_dt
+    derivee_t_GPU[list(gridSize), list(BlockSize)](d_image1,d_image2,d_tab_dt)
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dx, d_tab_dt, -1., d_tab_dx_dt)
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_dt,d_rayon,d_somme_tab_dx_dt)
+    
+    #calculer somme_tab_dy_dt
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dy, d_tab_dt, -1., d_tab_dy_dt)
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dy_dt,d_rayon,d_somme_tab_dy_dt)
+    
+    #calculer AtA
+    # AtA = np.array([[d_somme_tab_dx_2,d_somme_tab_dx_dy],[d_somme_tab_dx_dy,d_somme_tab_dy_2]])
+    d_AtA[0,0] = d_somme_tab_dx_2
+    d_AtA[0,1] = d_somme_tab_dx_dy
+    d_AtA[1,0] = d_somme_tab_dx_dy
+    d_AtA[1,1] = d_somme_tab_dy_2
 
-#     #calculer somme_tab_dx_dt
-#     derivee_t[tuple(gridSize), tuple(blockSize)](d_image_1,d_image_2,d_tab_dt)
-#     tab_dx_dt = d_tab_dx * -d_tab_dt
-#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dx_dt,d_rayon,d_somme_tab_dx_dt)
+    #calculer AtB
+    d_Atb[0] = d_somme_tab_dx_dt
+    d_Atb[1] = d_somme_tab_dy_dt
+    # AtB = np.array([d_somme_tab_dx_dt,d_somme_tab_dy_dt])
+
+    #calculer inv_AtA
+    # inverser_la_matrice_GPU[list(gridSize), list(BlockSize)](d_AtA,d_inv_AtA)
+    inverser_la_matrice_GPU(d_AtA, d_premier, d_deuxieme, d_determinant, d_inv_AtA)
     
 
-#     #calculer somme_tab_dy_dt
-#     tab_dy_dt = tab_dy * -d_tab_dt
-#     somme_fenetre_gobal[tuple(gridSize), tuple(blockSize)](tab_dy_dt,d_rayon,d_somme_tab_dy_dt)
-    
+    #calculer dx 
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[0,0],d_Atb[0],1.,d_dx1)
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[0,1],d_Atb[1],1.,d_dx2)
+    addition_2_tab_GPU[list(gridSize), list(BlockSize)](d_dx1,d_dx2,d_dx)
 
-#     #calculer AtA
-#     AtA = np.array([[d_somme_tab_dx_2,d_somme_tab_dx_dy],[d_somme_tab_dx_dy,d_somme_tab_dy_2]])
-#     #calculer AtB
-#     AtB = np.array([d_somme_tab_dx_dt,d_somme_tab_dy_dt])
-#     #calculer inv_AtA
-#     inverser_la_matrice[tuple(gridSize), tuple(blockSize)](d_matrice,d_inv_AtA)
-    
+    #calculer dy
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[1,0],d_Atb[0],1.,d_dy1)
+    multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[1,1],d_Atb[1],1.,d_dy2)
+    addition_2_tab_GPU[list(gridSize), list(BlockSize)](d_dy1,d_dy2,d_dy)
 
-#     #calculer dx 
-#     d_dx = d_inv_AtA[0][0] * AtB[0] + d_inv_AtA[0][1] * AtB[1]
-#     d_dy = d_inv_AtA[1][0] * AtB[0] + d_inv_AtA[1][1] * AtB[1]
-   
+    dx = d_dx.copy_to_host()
+    dy = d_dy.copy_to_host()
+
+    return dx, dy   
