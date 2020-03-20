@@ -3,6 +3,7 @@ import scipy.signal
 import cv2 as cv
 import matplotlib.pyplot as plt
 import flowpy
+import numba
 import numba.cuda as cu
 
 from scipy.ndimage import map_coordinates
@@ -17,6 +18,33 @@ def warp(image, flow):
     gy = (coord[0] + flow[1])
 
     return map_coordinates(image, (gy, gx), mode="nearest")
+
+@numba.jit()
+def warp_parallel(image, flow_y, flow_x):
+    height, width = image.shape
+
+    result = np.zeros_like(image)
+
+    for y in range(height):
+        for x in range(width):
+            y_shift = y + flow_y[y, x]
+            x_shift = x + flow_x[y, x]
+
+            x_shift = max(min(width - 1, x_shift), 0)
+            y_shift = max(min(height - 1, y_shift), 0)
+
+            lower_x, lower_y = int(x_shift), int(y_shift)
+            upper_x, upper_y = lower_x + 1, lower_y + 1
+
+            residual_x = x_shift - lower_x
+            residual_y = y_shift - lower_y
+
+            result[y, x] = (image[lower_y, lower_x] * (1 - residual_y) * (1 - residual_x) +
+                            image[lower_y, upper_x] * (1 - residual_y) * residual_x +
+                            image[upper_y, lower_x] * residual_y * (1 - residual_x) +
+                            image[upper_y, upper_x] * residual_y * residual_x)
+
+    return result
 
 def derivee_x(image):
     # Retourne la derivée en x pour tous les pixels de l'image
