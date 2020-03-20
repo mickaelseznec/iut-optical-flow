@@ -5,7 +5,18 @@ import matplotlib.pyplot as plt
 import flowpy
 import numba.cuda as cu
 
+from scipy.ndimage import map_coordinates
+
     #--------------------------------------------------- Sur CPU ---------------------------------------------------#
+def warp(image, flow):
+    height, width = image.shape
+    coord = np.mgrid[:height,:width]
+
+    points = coord.transpose(1,2,0).reshape((-1,2))
+    gx = (coord[1] + flow[0])
+    gy = (coord[0] + flow[1])
+
+    return map_coordinates(image, (gy, gx), mode="nearest")
 
 def derivee_x(image):
     # Retourne la derivée en x pour tous les pixels de l'image
