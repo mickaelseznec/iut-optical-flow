@@ -17,12 +17,12 @@ matrice22 = np.array([[image_1,image_1],[image_1,image_1]])
 matrice11 = np.array([image_1,image_1])
 
 # GPU
-d_image_1 = cu.to_device(image_1)
-d_image_2 = cu.to_device(image_2)
-d_dx = cu.device_array_like(image_1)
-d_dy = cu.device_array_like(image_1)
-d_matrice22 = cu.to_device(matrice22)
-d_matrice11 = cu.to_device(matrice11)
+d_image_1 = cu.to_device(image_1.astype(float))
+d_image_2 = cu.to_device(image_2.astype(float))
+d_dx = cu.device_array_like(image_1.astype(float))
+d_dy = cu.device_array_like(image_1.astype(float))
+d_matrice22 = cu.to_device(matrice22.astype(float))
+d_matrice11 = cu.to_device(matrice11.astype(float))
 
 
 # BlockSize = np.array([32,32])

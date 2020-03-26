@@ -18,15 +18,18 @@ class TestDeriveesImage(unittest.TestCase):
         self.image_3 = np.array([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,1,1,1,1,2,6,3,8,4]).reshape(5,5)
         self.image_4 = np.array([4,5,7,1,0,6,3,3,2,8,4,1]).reshape(4,3)
         self.tab_1 = np.array([5,8,13,123,42,57,2,1,3]).reshape(3,3)
+        self.d_tab_1 = cu.to_device(self.tab_1.astype(float))
         self.tab_2 = np.array([6,10,12,42,47,45,39,27,36]).reshape(3,3)
-        self.matrice = np.array([[self.tab_1,self.tab_1],[self.tab_1,self.tab_2]])
+        self.matrice = np.array([[self.tab_1,self.tab_1],[self.tab_2,self.tab_2]])
         self.d_matrice = cu.to_device(self.matrice.astype(float))
+        self.matrice2 = np.array([self.tab_1,self.tab_2])
+        self.d_matrice2 = cu.to_device(self.matrice2.astype(float))
         self.image_5 = np.array([8,4,6,2,9,7,18,48,3]).reshape(3,3)
         self.d_image_1 = cu.to_device(self.image_1)
         self.d_image_2 = cu.to_device(self.image_2)
         self.d_image_4 = cu.to_device(self.image_4)
         self.d_image_5 = cu.to_device(self.image_5)
-        self.d_tab_2 = cu.to_device(self.tab_2)
+        self.d_tab_2 = cu.to_device(self.tab_2.astype(float))
         self.d_tab_dx = cu.device_array_like(self.d_image_1)
         self.d_tab_dy = cu.device_array_like(self.d_image_1)
         self.d_tab_dt = cu.device_array_like(self.d_image_1)
@@ -122,6 +125,11 @@ class TestDeriveesImage(unittest.TestCase):
         op.somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](self.d_image_4, rayon, self.d_somme_tab)
         somme_GPU = self.d_somme_tab.copy_to_host()
         self.assertTrue(np.all(somme_GPU == somme_reference))
+
+    def test_flot_optique_GPU(self):
+        x_reference, y_reference = op.flux_optique(self.tab_1,self.tab_2,5)
+        x_GPU, y_GPU = op.flux_optique_GPU(self.d_tab_1,self.d_tab_2,5,self.d_matrice,self.matrice2)
+        print(1)
 
 if __name__ == "__main__":
     unittest.main()
