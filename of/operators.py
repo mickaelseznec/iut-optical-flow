@@ -110,7 +110,6 @@ def somme_fenetre_global(image,r):
 def inverser_matrice(matrice):
     tab_inv = np.zeros_like(matrice)
     determinant =  matrice[0,0] * matrice[1,1] - matrice[0,1] * matrice[1,0]
-    # print(matrice[0,0] * matrice[1,1])
     tab_inv[0,0] = matrice[1,1]
     tab_inv[0,1] = -1*matrice[0,1]
     tab_inv[1,0] = -1*matrice[1,0]
@@ -149,25 +148,22 @@ def flux_optique(image1, image2, rayon):
 def flux_optique_video(video, rayon):
     vid = cv.VideoCapture(video)
     ret, image_1_color = vid.read()
-    image_1 = cv.cvtColor(np.array(image_1_color), cv.COLOR_BGR2GRAY)
+    image_1 = cv.cvtColor(np.array(image_1_color), cv.COLOR_BGR2GRAY).astype(float)
     hauteur, largeur = image_1.shape
     image_1 = cv.resize(image_1,(largeur//4,hauteur//4))
     image_1_color = cv.resize(image_1_color,(largeur//4,hauteur//4))
-    # plt.imshow(image_1)
-    # plt.show()
 
     while(vid.isOpened()):
         ret, image_2_color = vid.read()
         if not ret:
             break
-        image_2 = cv.cvtColor(np.array(image_2_color), cv.COLOR_BGR2GRAY)
+        image_2 = cv.cvtColor(np.array(image_2_color), cv.COLOR_BGR2GRAY).astype(float)
         image_2 = cv.resize(image_2,(largeur//4,hauteur//4))
         image_2_color = cv.resize(image_2_color,(largeur//4,hauteur//4))
         if cv.waitKey(500) & 0xFF == ord('q'):
             break
         x, y = flux_optique(image_1, image_2, rayon)
         img = flowpy.flow_to_color(x,y, max_norm=5)
-        # norme = np.sqrt(x**2+y**2)
         output = cv.add(image_1_color, img)
         cv.imshow("sparse optical flow", output)
         image_1 = image_2
@@ -251,9 +247,7 @@ def inverser_la_matrice_GPU(d_matrice, d_premier, d_deuxieme, d_determinant, d_m
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,0], d_matrice[1,1], 1., d_premier) 
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,1], d_matrice[1,0], 1., d_deuxieme)
     
-    
     soustraction_2_tab_GPU[list(gridSize), list(BlockSize)](d_premier, d_deuxieme, d_determinant)
-
 
     division_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[1,1],d_determinant,1.,d_matrice_inverse[0,0])
     division_2_tab_GPU[list(gridSize), list(BlockSize)](d_matrice[0,1],d_determinant,-1.,d_matrice_inverse[0,1])
@@ -263,8 +257,7 @@ def inverser_la_matrice_GPU(d_matrice, d_premier, d_deuxieme, d_determinant, d_m
 
 @cu.jit()
 def somme_fenetre_global_GPU(d_image,d_r,d_som_tab):
-    hauteur,largeur = d_image.shape  
-    #création de fenêtre
+    hauteur,largeur = d_image.shape
     h,l = cu.grid(2) 
     result= 0
     if (h >= hauteur or l >= largeur):
@@ -314,53 +307,38 @@ def flux_optique_GPU(d_image1, d_image2, d_rayon,d_matrice22, d_matrice11):
     d_dy = cu.device_array_like(d_image1)
     d_dy1 = cu.device_array_like(d_image1)
     d_dy2 = cu.device_array_like(d_image1)
-    
-
     #calculer somme_tab_dx_2
     derivee_x_GPU[list(gridSize), list(BlockSize)](d_image1, d_tab_dx)
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dx, d_tab_dx, 1., d_tab_dx_2)
-    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_2, d_rayon, d_somme_tab_dx_2)
-    
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_2, d_rayon, d_somme_tab_dx_2)   
     #calculer somme_tab_dy_2
     derivee_y_GPU[list(gridSize), list(BlockSize)](d_image1, d_tab_dy)
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dy, d_tab_dy, 1., d_tab_dy_2)
     somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dy_2, d_rayon, d_somme_tab_dy_2)
-    
     #calculer somme_tab_dx_dy
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dx, d_tab_dy, 1., d_tab_dx_dy)
-    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_dy,d_rayon,d_somme_tab_dx_dy)
-   
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_dy,d_rayon,d_somme_tab_dx_dy)  
     #calculer somme_tab_dx_dt
     derivee_t_GPU[list(gridSize), list(BlockSize)](d_image1,d_image2,d_tab_dt)
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dx, d_tab_dt, -1., d_tab_dx_dt)
-    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_dt,d_rayon,d_somme_tab_dx_dt)
-    
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dx_dt,d_rayon,d_somme_tab_dx_dt)    
     #calculer somme_tab_dy_dt
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_tab_dy, d_tab_dt, -1., d_tab_dy_dt)
-    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dy_dt,d_rayon,d_somme_tab_dy_dt)
-    
+    somme_fenetre_global_GPU[list(gridSize), list(BlockSize)](d_tab_dy_dt,d_rayon,d_somme_tab_dy_dt)    
     #calculer AtA
-    # AtA = np.array([[d_somme_tab_dx_2,d_somme_tab_dx_dy],[d_somme_tab_dx_dy,d_somme_tab_dy_2]])
     d_AtA[0,0] = d_somme_tab_dx_2
     d_AtA[0,1] = d_somme_tab_dx_dy
     d_AtA[1,0] = d_somme_tab_dx_dy
     d_AtA[1,1] = d_somme_tab_dy_2
-
     #calculer AtB
     d_Atb[0] = d_somme_tab_dx_dt
     d_Atb[1] = d_somme_tab_dy_dt
-    # AtB = np.array([d_somme_tab_dx_dt,d_somme_tab_dy_dt])
-
     #calculer inv_AtA
-    # inverser_la_matrice_GPU[list(gridSize), list(BlockSize)](d_AtA,d_inv_AtA)
     inverser_la_matrice_GPU(d_AtA, d_premier, d_deuxieme, d_determinant, d_inv_AtA)
-    
-
     #calculer dx 
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[0,0],d_Atb[0],1.,d_dx1)
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[0,1],d_Atb[1],1.,d_dx2)
     addition_2_tab_GPU[list(gridSize), list(BlockSize)](d_dx1,d_dx2,d_dx)
-
     #calculer dy
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[1,0],d_Atb[0],1.,d_dy1)
     multiplication_2_tab_GPU[list(gridSize), list(BlockSize)](d_inv_AtA[1,1],d_Atb[1],1.,d_dy2)
@@ -370,3 +348,30 @@ def flux_optique_GPU(d_image1, d_image2, d_rayon,d_matrice22, d_matrice11):
     dy = d_dy.copy_to_host()
 
     return dx, dy   
+
+
+def flux_optique_video_GPU(video, rayon):
+    vid = cv.VideoCapture(video)
+    ret, image_1_color = vid.read()
+    image_1 = cv.cvtColor(np.array(image_1_color), cv.COLOR_BGR2GRAY)
+    d_image_1 = cu.to_device(image_1)
+
+    matrice22 = np.array([[image_1,image_1],[image_1,image_1]])
+    matrice11 = np.array([image_1,image_1])
+    d_matrice22 = cu.to_device(matrice22.astype(float))
+    d_matrice11 = cu.to_device(matrice11.astype(float))
+
+    while(vid.isOpened()):
+        ret, image_2_color = vid.read()
+        if not ret:
+            break
+        image_2 = cv.cvtColor(np.array(image_2_color), cv.COLOR_BGR2GRAY)
+        d_image_2 = cu.to_device(image_2)
+        x, y = flux_optique_GPU(d_image_1,d_image_2, rayon,d_matrice22,d_matrice11)
+        img = flowpy.flow_to_color(x,y, max_norm=5)
+        output = cv.add(image_1_color, img)
+        cv.imshow("sparse optical flow", output)
+        d_image_1 = d_image_2
+        image_1_color = image_2_color
+    vid.release()
+    cv.destroyAllWindows()
