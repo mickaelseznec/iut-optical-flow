@@ -10,7 +10,7 @@ ipython-genutils==0.2.0
 jedi==0.15.2
 kiwisolver==1.1.0
 matplotlib==3.1.2
-numpy==1.18.1
+numpy==1.22.0
 parso==0.5.2
 pexpect==4.7.0
 pickleshare==0.7.5
